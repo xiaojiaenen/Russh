@@ -60,6 +60,8 @@ pub fn run() {
             commands::ai::ai_nl_to_command,
             commands::ai::ai_analyze_error,
             commands::ai::ai_chat,
+            commands::security::check_command_safety,
+            commands::security::get_safety_rules,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::Moved(position) = event {

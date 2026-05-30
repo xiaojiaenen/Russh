@@ -21,3 +21,6 @@ Thumbs.db
 
 # Tauri
 src-tauri/target/
+
+# Reference
+Rig源码参考/

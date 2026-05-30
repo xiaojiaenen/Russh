@@ -166,8 +166,6 @@ pub async fn connect(
     let emit_session_id = session_id.clone();
     let app_clone = app.clone();
     tokio::spawn(async move {
-        use tokio::io::AsyncReadExt;
-
         let mut channel = channel;
         let mut buf = vec![0u8; 4096];
 

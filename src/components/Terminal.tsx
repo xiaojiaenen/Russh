@@ -82,7 +82,9 @@ export function Terminal({ sessionId }: TerminalProps) {
 
   // Listen for SSH output - always active
   useEffect(() => {
+    console.log("Terminal: setting up listener for session", sessionId);
     const unlisten = listen<{ session_id: string; data: string }>("terminal_data", (event) => {
+      console.log("Terminal: received data, session match:", event.payload.session_id === sessionId);
       if (event.payload.session_id === sessionId && termRef.current) {
         termRef.current.write(event.payload.data);
       }

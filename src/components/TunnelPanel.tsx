@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
+// Keyboard shortcuts:
+// F5: Refresh tunnel list
+// Ctrl+N: New tunnel
+// Delete: Stop selected tunnel
+
 interface TunnelPanelProps {
   sessionId: string;
 }

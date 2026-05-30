@@ -1,10 +1,29 @@
 use std::collections::HashMap;
 use std::sync::Arc;
-use tokio::io::AsyncWriteExt;
+use async_trait::async_trait;
 use tokio::sync::{Mutex, mpsc};
 use tauri::{State, AppHandle, Emitter};
 
-use crate::models::connection::ConnectionConfig;
+use russh::*;
+use russh_keys::*;
+
+use crate::models::connection::{AuthMethod, ConnectionConfig};
+
+// SSH Client Handler
+struct ClientHandler;
+
+#[async_trait]
+impl client::Handler for ClientHandler {
+    type Error = russh::Error;
+
+    async fn check_server_key(
+        self,
+        _server_public_key: &key::PublicKey,
+    ) -> Result<(Self, bool), Self::Error> {
+        // Accept all server keys (in production, verify the key)
+        Ok((self, true))
+    }
+}
 
 pub struct AppState {
     pub connections: Arc<Mutex<HashMap<String, ConnectionConfig>>>,
@@ -49,28 +68,68 @@ pub async fn connect(
 ) -> Result<String, String> {
     let session_id = uuid::Uuid::new_v4().to_string();
     let addr = format!("{}:{}", config.host, config.port);
-    let socket_addr: std::net::SocketAddr = addr
-        .parse()
-        .map_err(|e: std::net::AddrParseError| format!("Invalid address: {}", e))?;
 
-    let timeout = std::time::Duration::from_secs(config.timeout as u64);
+    // SSH client config
+    let ssh_config = client::Config {
+        inactivity_timeout: Some(std::time::Duration::from_secs(60)),
+        ..<_>::default()
+    };
+    let ssh_config = Arc::new(ssh_config);
 
-    // TCP connect with timeout
-    let stream = tokio::time::timeout(timeout, async {
-        let s = tokio::net::TcpStream::connect(socket_addr)
-            .await
-            .map_err(|e| format!("TCP connection failed: {}", e))?;
-        s.set_nodelay(true).ok();
-        Ok::<_, String>(s)
-    })
-    .await
-    .map_err(|_| "Connection timeout".to_string())?
-    .map_err(|e| e)?;
+    // Connect with SSH protocol
+    let mut ssh_session = client::connect(ssh_config, addr.clone(), ClientHandler)
+        .await
+        .map_err(|e| format!("SSH connection failed: {}", e))?;
 
-    // Split into read and write halves
-    let (reader, writer) = stream.into_split();
+    // Authenticate
+    let auth_result = match &config.auth {
+        AuthMethod::Password { password } => {
+            ssh_session
+                .authenticate_password(&config.username, password)
+                .await
+                .map_err(|e| format!("Auth failed: {}", e))?
+        }
+        AuthMethod::KeyFile { key_path, passphrase } => {
+            let key_pair = load_secret_key(key_path, passphrase.as_deref())
+                .map_err(|e| format!("Failed to load key: {}", e))?;
+            ssh_session
+                .authenticate_publickey(&config.username, Arc::new(key_pair))
+                .await
+                .map_err(|e| format!("Auth failed: {}", e))?
+        }
+        _ => {
+            return Err("Unsupported auth method".to_string());
+        }
+    };
 
-    // Create channels for write and shutdown
+    if !auth_result {
+        return Err("Authentication failed".to_string());
+    }
+
+    // Open a session channel
+    let mut channel = ssh_session
+        .channel_open_session()
+        .await
+        .map_err(|e| format!("Failed to open channel: {}", e))?;
+
+    // Request PTY
+    channel
+        .request_pty(
+            false,
+            "xterm-256color",
+            80, 24, 0, 0,
+            &[],
+        )
+        .await
+        .map_err(|e| format!("Failed to request PTY: {}", e))?;
+
+    // Start interactive shell
+    channel
+        .request_shell(true)
+        .await
+        .map_err(|e| format!("Failed to start shell: {}", e))?;
+
+    // Create channels for I/O
     let (shutdown_tx, mut shutdown_rx) = mpsc::channel::<()>(1);
     let (write_tx, mut write_rx) = mpsc::channel::<Vec<u8>>(256);
 
@@ -103,57 +162,67 @@ pub async fn connect(
         message: Some(format!("Connected to {}:{}", config.host, config.port)),
     });
 
-    // Spawn reader task
+    // Spawn I/O task
     let emit_session_id = session_id.clone();
     let app_clone = app.clone();
     tokio::spawn(async move {
         use tokio::io::AsyncReadExt;
-        let mut reader = reader;
-        let mut buf = [0u8; 4096];
+
+        let mut channel = channel;
+        let mut buf = vec![0u8; 4096];
 
         loop {
             tokio::select! {
-                _ = shutdown_rx.recv() => {
-                    break;
-                }
-                result = reader.read(&mut buf) => {
-                    match result {
-                        Ok(0) => {
+                // Read from SSH channel -> emit to frontend
+                msg = channel.wait() => {
+                    match msg {
+                        Some(ChannelMsg::Data { ref data }) => {
+                            let text = String::from_utf8_lossy(data).to_string();
+                            let _ = app_clone.emit("terminal_data", TerminalData {
+                                session_id: emit_session_id.clone(),
+                                data: text,
+                            });
+                        }
+                        Some(ChannelMsg::ExitStatus { exit_status }) => {
                             let _ = app_clone.emit("connection_status", ConnectionStatus {
                                 session_id: emit_session_id.clone(),
                                 status: "disconnected".to_string(),
-                                message: Some("Connection closed".to_string()),
+                                message: Some(format!("Shell exited with status {}", exit_status)),
                             });
                             break;
                         }
-                        Ok(n) => {
-                            let data = String::from_utf8_lossy(&buf[..n]).to_string();
-                            let _ = app_clone.emit("terminal_data", TerminalData {
-                                session_id: emit_session_id.clone(),
-                                data,
-                            });
-                        }
-                        Err(_) => {
+                        Some(ChannelMsg::Eof) => {
                             let _ = app_clone.emit("connection_status", ConnectionStatus {
                                 session_id: emit_session_id.clone(),
-                                status: "error".to_string(),
-                                message: Some("Read error".to_string()),
+                                status: "disconnected".to_string(),
+                                message: Some("Channel closed".to_string()),
                             });
                             break;
                         }
+                        None => {
+                            let _ = app_clone.emit("connection_status", ConnectionStatus {
+                                session_id: emit_session_id.clone(),
+                                status: "disconnected".to_string(),
+                                message: Some("Channel closed".to_string()),
+                            });
+                            break;
+                        }
+                        _ => {}
                     }
                 }
-            }
-        }
-    });
 
-    // Spawn writer task
-    tokio::spawn(async move {
-        let mut writer = writer;
+                // Write from frontend -> SSH channel
+                Some(data) = write_rx.recv() => {
+                    if channel.data(&data[..]).await.is_err() {
+                        break;
+                    }
+                }
 
-        while let Some(data) = write_rx.recv().await {
-            if writer.write_all(&data).await.is_err() {
-                break;
+                // Shutdown signal
+                _ = shutdown_rx.recv() => {
+                    let _ = channel.close().await;
+                    break;
+                }
             }
         }
     });
@@ -168,11 +237,9 @@ pub async fn disconnect(
 ) -> Result<(), String> {
     let mut sessions = state.active_sessions.lock().await;
     if let Some(mut session) = sessions.remove(&session_id) {
-        // Send shutdown signal
         if let Some(tx) = session.shutdown_tx.take() {
             let _ = tx.send(()).await;
         }
-        // Drop write_tx to close the channel
         session.write_tx.take();
     }
     Ok(())
@@ -231,23 +298,40 @@ pub async fn test_connection(
     config: ConnectionConfig,
 ) -> Result<String, String> {
     let addr = format!("{}:{}", config.host, config.port);
-    let socket_addr: std::net::SocketAddr = addr
-        .parse()
-        .map_err(|e: std::net::AddrParseError| format!("Invalid address: {}", e))?;
 
-    let timeout = std::time::Duration::from_secs(config.timeout as u64);
+    let ssh_config = client::Config {
+        inactivity_timeout: Some(std::time::Duration::from_secs(5)),
+        ..<_>::default()
+    };
+    let ssh_config = Arc::new(ssh_config);
 
-    match tokio::time::timeout(timeout, async {
-        let stream = tokio::net::TcpStream::connect(socket_addr)
-            .await
-            .map_err(|e| format!("Connection failed: {}", e))?;
-        drop(stream);
-        Ok::<_, String>(())
-    })
-    .await
-    {
-        Ok(Ok(_)) => Ok("Connection successful".to_string()),
-        Ok(Err(e)) => Err(e),
-        Err(_) => Err("Connection timeout".to_string()),
+    let mut ssh_session = client::connect(ssh_config, addr, ClientHandler)
+        .await
+        .map_err(|e| format!("Connection failed: {}", e))?;
+
+    // Try authentication
+    let auth_result = match &config.auth {
+        AuthMethod::Password { password } => {
+            ssh_session
+                .authenticate_password(&config.username, password)
+                .await
+                .map_err(|e| format!("Auth failed: {}", e))?
+        }
+        AuthMethod::KeyFile { key_path, passphrase } => {
+            let key_pair = load_secret_key(key_path, passphrase.as_deref())
+                .map_err(|e| format!("Failed to load key: {}", e))?;
+            ssh_session
+                .authenticate_publickey(&config.username, Arc::new(key_pair))
+                .await
+                .map_err(|e| format!("Auth failed: {}", e))?
+        }
+        _ => false,
+    };
+
+    if auth_result {
+        let _ = ssh_session.disconnect(Disconnect::ByApplication, "", "English").await;
+        Ok("Connection and authentication successful".to_string())
+    } else {
+        Err("Authentication failed".to_string())
     }
 }

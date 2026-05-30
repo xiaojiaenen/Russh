@@ -7970,6 +7970,7 @@ dependencies = [
 name = "russh"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "chrono",
  "futures-util",
  "regex",

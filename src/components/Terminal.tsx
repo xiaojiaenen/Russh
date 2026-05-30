@@ -35,7 +35,6 @@ export function Terminal({ sessionId }: TerminalProps) {
         cursorStyle: "bar",
         scrollback: 10000,
         allowProposedApi: true,
-        rendererType: "dom",
       });
 
       const fitAddon = new FitAddon();

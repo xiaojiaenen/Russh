@@ -6,6 +6,7 @@ import { SftpPanel } from "./components/SftpPanel";
 import { MonitorPanel } from "./components/MonitorPanel";
 import { TunnelPanel } from "./components/TunnelPanel";
 import { AiPanel } from "./components/AiPanel";
+import { BatchPanel } from "./components/BatchPanel";
 import { useConnectionStore } from "./stores/connection-store";
 import { ConnectionConfig } from "./types/connection";
 
@@ -19,7 +20,7 @@ interface Tab {
   id: string;
   title: string;
   sessionId: string | null;
-  type: "terminal" | "sftp" | "monitor" | "tunnel";
+  type: "terminal" | "sftp" | "monitor" | "tunnel" | "batch";
 }
 
 function App() {
@@ -101,6 +102,17 @@ function App() {
     } catch (e) {
       console.error("Connection failed:", e);
     }
+  }, []);
+
+  const handleOpenBatch = useCallback(() => {
+    const newTab: Tab = {
+      id: crypto.randomUUID(),
+      title: "Batch",
+      sessionId: null,
+      type: "batch",
+    };
+    setTabs((prev) => [...prev, newTab]);
+    setActiveTabId(newTab.id);
   }, []);
 
   const handleCloseTab = useCallback(
@@ -186,6 +198,12 @@ function App() {
           </button>
           <div className="flex-1" />
           <button
+            onClick={handleOpenBatch}
+            className="h-8 px-2 text-[10px] text-fg-2 hover:text-fg-0 hover:bg-bg-3 rounded"
+          >
+            Batch
+          </button>
+          <button
             onClick={() => setShowAi(!showAi)}
             className={`h-8 px-2 text-[10px] rounded ${
               showAi
@@ -210,6 +228,8 @@ function App() {
               ) : (
                 <Terminal sessionId={activeTab.sessionId} />
               )
+            ) : activeTab?.type === "batch" ? (
+              <BatchPanel connections={connections.map((c) => ({ id: c.id, name: c.name, host: c.host }))} />
             ) : (
               <WelcomeScreen appInfo={appInfo} />
             )}

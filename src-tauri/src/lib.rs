@@ -3,6 +3,7 @@ mod models;
 
 use commands::ai::AiState;
 use commands::audit::AuditState;
+use commands::batch::BatchState;
 use commands::ssh::AppState;
 use commands::tunnel::TunnelManager;
 use tauri::{Manager, WindowEvent};
@@ -18,6 +19,7 @@ pub fn run() {
     let tunnel_manager = TunnelManager::default();
     let ai_state = AiState::default();
     let audit_state = AuditState::default();
+    let batch_state = BatchState::default();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
@@ -25,6 +27,7 @@ pub fn run() {
         .manage(tunnel_manager)
         .manage(ai_state)
         .manage(audit_state)
+        .manage(batch_state)
         .invoke_handler(tauri::generate_handler![
             commands::app::get_app_info,
             commands::app::get_platform,
@@ -69,6 +72,9 @@ pub fn run() {
             commands::audit::audit_log_event,
             commands::audit::audit_query_logs,
             commands::audit::audit_verify_integrity,
+            commands::batch::batch_execute,
+            commands::batch::batch_get_task,
+            commands::batch::batch_list_tasks,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::Moved(position) = event {

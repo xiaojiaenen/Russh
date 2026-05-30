@@ -21,7 +21,7 @@ export function Terminal({ sessionId }: TerminalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [ready, setReady] = useState(false);
 
-  // Create terminal with delay to ensure container is rendered
+  // Create terminal with delay
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!containerRef.current) return;
@@ -35,7 +35,6 @@ export function Terminal({ sessionId }: TerminalProps) {
         cursorStyle: "bar",
         scrollback: 10000,
         allowProposedApi: true,
-        // Disable canvas rendering to avoid dimension errors
         rendererType: "dom",
       });
 
@@ -84,8 +83,6 @@ export function Terminal({ sessionId }: TerminalProps) {
   // Listen for SSH output
   useEffect(() => {
     if (!ready) return;
-    const term = termRef.current;
-    if (!term) return;
 
     const unlisten = listen<{ session_id: string; data: string }>("terminal_data", (event) => {
       if (event.payload.session_id === sessionId && termRef.current) {
@@ -99,14 +96,14 @@ export function Terminal({ sessionId }: TerminalProps) {
   // Listen for connection status
   useEffect(() => {
     if (!ready) return;
-    const term = termRef.current;
-    if (!term) return;
 
     const unlisten = listen<{ session_id: string; status: string; message: string | null }>("connection_status", (event) => {
       if (event.payload.session_id === sessionId && termRef.current) {
         if (event.payload.status === "disconnected") {
           termRef.current.writeln("\r\n\x1b[38;2;239;68;68m连接已断开\x1b[0m");
           termRef.current.write("\x1b[38;2;161;161;170m>\x1b[0m ");
+        } else if (event.payload.status === "error") {
+          termRef.current.writeln(`\r\n\x1b[38;2;239;68;68m错误: ${event.payload.message || "未知"}\x1b[0m`);
         }
       }
     });
@@ -114,16 +111,15 @@ export function Terminal({ sessionId }: TerminalProps) {
     return () => { unlisten.then(fn => fn()); };
   }, [sessionId, ready]);
 
-  // Handle keyboard input - send to SSH
+  // Handle keyboard input - DON'T echo, let server handle it
   useEffect(() => {
     if (!ready) return;
     const term = termRef.current;
     if (!term || !sessionId) return;
 
     const disposable = term.onData((data) => {
-      // Echo input locally first (for when SSH is not connected)
-      term.write(data);
-      // Send to SSH backend (async, don't block)
+      // Just send to SSH, don't echo locally
+      // The server will echo back through terminal_data event
       invoke("ssh_write", { sessionId, data }).catch(() => {});
     });
 

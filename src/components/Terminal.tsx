@@ -89,13 +89,18 @@ export function Terminal({ sessionId }: TerminalProps) {
     term.loadAddon(searchAddon);
     term.loadAddon(new WebLinksAddon());
 
+    // Open first (creates canvas in DOM)
+    term.open(containerRef.current);
+
+    // Then load WebGL (needs canvas to exist)
     try {
-      term.loadAddon(new WebglAddon());
+      const webglAddon = new WebglAddon();
+      term.loadAddon(webglAddon);
     } catch {
-      // WebGL not available
+      // WebGL not available, fallback to canvas renderer
     }
 
-    term.open(containerRef.current);
+    // Finally fit (needs renderer to be ready)
     fitAddon.fit();
 
     termRef.current = term;

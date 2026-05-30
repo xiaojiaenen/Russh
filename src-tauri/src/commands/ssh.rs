@@ -1,5 +1,7 @@
 use std::collections::HashMap;
 use std::sync::Arc;
+use tokio::io::AsyncWriteExt;
+use tokio::net::tcp::OwnedWriteHalf;
 use tokio::sync::{Mutex, mpsc};
 use tauri::{State, AppHandle, Emitter};
 
@@ -15,6 +17,7 @@ pub struct SessionInfo {
     pub config_id: String,
     pub connected_at: chrono::DateTime<chrono::Utc>,
     pub shutdown_tx: Option<mpsc::Sender<()>>,
+    pub write_tx: Option<mpsc::Sender<Vec<u8>>>,
 }
 
 impl Default for AppState {
@@ -65,14 +68,19 @@ pub async fn connect(
     .map_err(|_| "Connection timeout".to_string())?
     .map_err(|e| e)?;
 
-    // For now, store session as connected (real SSH handshake will use russh later)
+    // Split into read and write halves
+    let (reader, writer) = stream.into_split();
+
+    // Create channels for write and shutdown
     let (shutdown_tx, mut shutdown_rx) = mpsc::channel::<()>(1);
+    let (write_tx, mut write_rx) = mpsc::channel::<Vec<u8>>(256);
 
     let session = SessionInfo {
         id: session_id.clone(),
         config_id: config.id.clone(),
         connected_at: chrono::Utc::now(),
         shutdown_tx: Some(shutdown_tx),
+        write_tx: Some(write_tx),
     };
 
     // Store session
@@ -96,29 +104,23 @@ pub async fn connect(
         message: Some(format!("Connected to {}:{}", config.host, config.port)),
     });
 
-    // Spawn a task that handles SSH I/O (will be replaced with real russh integration)
+    // Spawn reader task
     let emit_session_id = session_id.clone();
+    let app_clone = app.clone();
     tokio::spawn(async move {
         use tokio::io::AsyncReadExt;
-
-        let mut reader_stream = stream;
+        let mut reader = reader;
         let mut buf = [0u8; 4096];
-
-        // Send initial prompt
-        let _ = app.emit("terminal_data", TerminalData {
-            session_id: emit_session_id.clone(),
-            data: format!("\x1b[38;2;245;158;11m{}\x1b[0m\r\n", config.username),
-        });
 
         loop {
             tokio::select! {
                 _ = shutdown_rx.recv() => {
                     break;
                 }
-                result = reader_stream.read(&mut buf) => {
+                result = reader.read(&mut buf) => {
                     match result {
                         Ok(0) => {
-                            let _ = app.emit("connection_status", ConnectionStatus {
+                            let _ = app_clone.emit("connection_status", ConnectionStatus {
                                 session_id: emit_session_id.clone(),
                                 status: "disconnected".to_string(),
                                 message: Some("Connection closed".to_string()),
@@ -127,13 +129,13 @@ pub async fn connect(
                         }
                         Ok(n) => {
                             let data = String::from_utf8_lossy(&buf[..n]).to_string();
-                            let _ = app.emit("terminal_data", TerminalData {
+                            let _ = app_clone.emit("terminal_data", TerminalData {
                                 session_id: emit_session_id.clone(),
                                 data,
                             });
                         }
                         Err(_) => {
-                            let _ = app.emit("connection_status", ConnectionStatus {
+                            let _ = app_clone.emit("connection_status", ConnectionStatus {
                                 session_id: emit_session_id.clone(),
                                 status: "error".to_string(),
                                 message: Some("Read error".to_string()),
@@ -142,6 +144,17 @@ pub async fn connect(
                         }
                     }
                 }
+            }
+        }
+    });
+
+    // Spawn writer task
+    tokio::spawn(async move {
+        let mut writer = writer;
+
+        while let Some(data) = write_rx.recv().await {
+            if writer.write_all(&data).await.is_err() {
+                break;
             }
         }
     });
@@ -160,6 +173,8 @@ pub async fn disconnect(
         if let Some(tx) = session.shutdown_tx.take() {
             let _ = tx.send(()).await;
         }
+        // Drop write_tx to close the channel
+        session.write_tx.take();
     }
     Ok(())
 }
@@ -167,16 +182,18 @@ pub async fn disconnect(
 #[tauri::command]
 pub async fn ssh_write(
     state: State<'_, AppState>,
-    _app: AppHandle,
     session_id: String,
     data: String,
 ) -> Result<(), String> {
     let sessions = state.active_sessions.lock().await;
-    if let Some(_session) = sessions.get(&session_id) {
-        // In real implementation, write to SSH channel
-        // For now, just log it
-        tracing::info!("SSH write to {}: {}", session_id, data);
-        Ok(())
+    if let Some(session) = sessions.get(&session_id) {
+        if let Some(write_tx) = &session.write_tx {
+            write_tx.send(data.into_bytes()).await
+                .map_err(|e| format!("Write channel closed: {}", e))?;
+            Ok(())
+        } else {
+            Err("No write channel".to_string())
+        }
     } else {
         Err("Session not found".to_string())
     }

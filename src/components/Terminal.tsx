@@ -120,12 +120,11 @@ export function Terminal({ sessionId }: TerminalProps) {
     const term = termRef.current;
     if (!term || !sessionId) return;
 
-    const disposable = term.onData(async (data) => {
-      try {
-        await invoke("ssh_write", { sessionId, data });
-      } catch (e) {
-        console.error("SSH write failed:", e);
-      }
+    const disposable = term.onData((data) => {
+      // Echo input locally first (for when SSH is not connected)
+      term.write(data);
+      // Send to SSH backend (async, don't block)
+      invoke("ssh_write", { sessionId, data }).catch(() => {});
     });
 
     return () => { disposable.dispose(); };

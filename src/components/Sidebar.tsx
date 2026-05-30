@@ -74,7 +74,7 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
         {Object.entries(groups).map(([group, items]) => (
           <div key={group} className="mb-3">
             <div className="flex items-center px-2 py-1 text-xs text-fg-2">
-              <span className="mr-1 text-[10px]">&#9662;</span>
+              <span className="mr-1 text-2xs">&#9662;</span>
               {group}
             </div>
             {items.map((config) => (
@@ -88,7 +88,7 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                   <div className="text-xs text-fg-0 truncate">
                     {config.name || config.host}
                   </div>
-                  <div className="text-[10px] text-fg-2 truncate">
+                  <div className="text-2xs text-fg-2 truncate">
                     {config.username}@{config.host}:{config.port}
                   </div>
                 </div>
@@ -98,7 +98,7 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                       e.stopPropagation();
                       onOpenSftp(config);
                     }}
-                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
                     title="Open SFTP"
                   >
                     F
@@ -108,7 +108,7 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                       e.stopPropagation();
                       onOpenMonitor(config);
                     }}
-                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
                     title="Open Monitor"
                   >
                     M
@@ -118,7 +118,7 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                       e.stopPropagation();
                       onOpenTunnel(config);
                     }}
-                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
                     title="Open Tunnel"
                   >
                     T
@@ -128,7 +128,7 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                       e.stopPropagation();
                       handleEdit(config);
                     }}
-                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
                   >
                     E
                   </button>
@@ -137,7 +137,7 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                       e.stopPropagation();
                       onDelete(config.id);
                     }}
-                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-error rounded text-[10px]"
+                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-error rounded text-2xs"
                   >
                     X
                   </button>

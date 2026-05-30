@@ -117,7 +117,7 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
             {tunnels.map((tunnel) => (
               <tr key={tunnel.id} className="hover:bg-bg-3 border-b border-border">
                 <td className="px-3 py-2">
-                  <span className="px-1.5 py-0.5 bg-accent/10 text-accent rounded text-[10px]">
+                  <span className="px-1.5 py-0.5 bg-accent/10 text-accent rounded text-2xs">
                     {tunnel.tunnel_type.toUpperCase()}
                   </span>
                 </td>
@@ -128,7 +128,7 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
                   {tunnel.remote_host}:{tunnel.remote_port}
                 </td>
                 <td className="px-3 py-2">
-                  <span className={`text-[10px] ${tunnel.status === "running" ? "text-success" : "text-fg-2"}`}>
+                  <span className={`text-2xs ${tunnel.status === "running" ? "text-success" : "text-fg-2"}`}>
                     {tunnel.status}
                   </span>
                 </td>
@@ -138,7 +138,7 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
                 <td className="px-3 py-2 text-right">
                   <button
                     onClick={() => handleClose(tunnel.id)}
-                    className="text-[10px] text-fg-2 hover:text-error"
+                    className="text-2xs text-fg-2 hover:text-error"
                   >
                     停止
                   </button>

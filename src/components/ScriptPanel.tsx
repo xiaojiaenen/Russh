@@ -101,7 +101,7 @@ export function ScriptPanel({ onExecute }: ScriptPanelProps) {
           <span className="text-xs text-fg-1">Scripts</span>
           <button
             onClick={() => handleEdit()}
-            className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+            className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
           >
             +
           </button>
@@ -116,7 +116,7 @@ export function ScriptPanel({ onExecute }: ScriptPanelProps) {
               onClick={() => setSelectedId(script.id)}
             >
               <div className="text-xs text-fg-0 truncate">{script.name}</div>
-              <div className="text-[10px] text-fg-2">{script.language} | {script.category}</div>
+              <div className="text-2xs text-fg-2">{script.language} | {script.category}</div>
             </div>
           ))}
           {scripts.length === 0 && (
@@ -136,19 +136,19 @@ export function ScriptPanel({ onExecute }: ScriptPanelProps) {
               <div className="flex gap-2">
                 <button
                   onClick={() => handleExecute(selected)}
-                  className="h-6 px-2 text-[10px] text-bg-0 bg-accent rounded hover:opacity-90"
+                  className="h-6 px-2 text-2xs text-bg-0 bg-accent rounded hover:opacity-90"
                 >
                   Execute
                 </button>
                 <button
                   onClick={() => handleEdit(selected)}
-                  className="h-6 px-2 text-[10px] text-fg-2 border border-border rounded hover:bg-bg-3"
+                  className="h-6 px-2 text-2xs text-fg-2 border border-border rounded hover:bg-bg-3"
                 >
                   Edit
                 </button>
                 <button
                   onClick={() => handleDelete(selected.id)}
-                  className="h-6 px-2 text-[10px] text-error border border-error/30 rounded hover:bg-error/10"
+                  className="h-6 px-2 text-2xs text-error border border-error/30 rounded hover:bg-error/10"
                 >
                   Delete
                 </button>

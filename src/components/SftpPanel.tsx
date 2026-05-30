@@ -205,7 +205,7 @@ export function SftpPanel({ sessionId }: SftpPanelProps) {
       </div>
 
       {/* Status bar */}
-      <div className="h-6 border-t border-border flex items-center px-3 text-[10px] text-fg-2">
+      <div className="h-6 border-t border-border flex items-center px-3 text-2xs text-fg-2">
         <span>{files.length} items</span>
         <span className="ml-2">
           {formatSize(files.reduce((acc, f) => acc + f.size, 0))}

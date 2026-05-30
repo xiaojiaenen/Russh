@@ -104,7 +104,7 @@ export function MonitorPanel({ sessionId }: MonitorPanelProps) {
             <span className="text-xs text-fg-0 font-mono">{cpuUsage.toFixed(1)}%</span>
           </div>
           <ProgressBar value={cpuUsage} color="var(--accent)" />
-          <div className="flex gap-4 mt-2 text-[10px] text-fg-2">
+          <div className="flex gap-4 mt-2 text-2xs text-fg-2">
             <span>用户: {cpu?.user.toFixed(1)}%</span>
             <span>系统: {cpu?.system.toFixed(1)}%</span>
           </div>
@@ -117,14 +117,14 @@ export function MonitorPanel({ sessionId }: MonitorPanelProps) {
             <span className="text-xs text-fg-0 font-mono">{memUsage.toFixed(1)}%</span>
           </div>
           <ProgressBar value={memUsage} color="var(--info)" />
-          <div className="flex gap-4 mt-2 text-[10px] text-fg-2">
+          <div className="flex gap-4 mt-2 text-2xs text-fg-2">
             <span>{formatBytes(memory?.used || 0)} / {formatBytes(memory?.total || 0)}</span>
           </div>
           {memory && memory.swap_total > 0 && (
             <>
               <div className="flex items-center justify-between mt-2 mb-1">
-                <span className="text-[10px] text-fg-2">Swap</span>
-                <span className="text-[10px] text-fg-2 font-mono">{swapUsage.toFixed(1)}%</span>
+                <span className="text-2xs text-fg-2">Swap</span>
+                <span className="text-2xs text-fg-2 font-mono">{swapUsage.toFixed(1)}%</span>
               </div>
               <ProgressBar value={swapUsage} color="var(--warning)" />
             </>
@@ -139,7 +139,7 @@ export function MonitorPanel({ sessionId }: MonitorPanelProps) {
               <span className="text-xs text-fg-0 font-mono">{disk.use_percent.toFixed(1)}%</span>
             </div>
             <ProgressBar value={disk.use_percent} color="var(--success)" />
-            <div className="flex gap-4 mt-2 text-[10px] text-fg-2">
+            <div className="flex gap-4 mt-2 text-2xs text-fg-2">
               <span>{formatBytes(disk.used)} / {formatBytes(disk.total)}</span>
               <span>可用: {formatBytes(disk.available)}</span>
             </div>
@@ -154,7 +154,7 @@ export function MonitorPanel({ sessionId }: MonitorPanelProps) {
           <div className="flex gap-2">
             <button
               onClick={() => setSortField("cpu")}
-              className={`text-[10px] px-2 py-0.5 rounded ${
+              className={`text-2xs px-2 py-0.5 rounded ${
                 sortField === "cpu" ? "bg-accent text-bg-0" : "text-fg-2 hover:text-fg-0"
               }`}
             >
@@ -162,7 +162,7 @@ export function MonitorPanel({ sessionId }: MonitorPanelProps) {
             </button>
             <button
               onClick={() => setSortField("mem")}
-              className={`text-[10px] px-2 py-0.5 rounded ${
+              className={`text-2xs px-2 py-0.5 rounded ${
                 sortField === "mem" ? "bg-accent text-bg-0" : "text-fg-2 hover:text-fg-0"
               }`}
             >

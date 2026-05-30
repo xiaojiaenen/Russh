@@ -4,6 +4,15 @@ export default {
   darkMode: "class",
   theme: {
     extend: {
+      fontSize: {
+        "2xs": ["11px", "16px"],
+        xs: ["12px", "18px"],
+        sm: ["14px", "20px"],
+        base: ["15px", "24px"],
+        lg: ["17px", "26px"],
+        xl: ["20px", "28px"],
+        "2xl": ["24px", "32px"],
+      },
       colors: {
         bg: {
           0: "var(--bg-0)",

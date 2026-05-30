@@ -234,19 +234,19 @@ export function Terminal({ sessionId }: TerminalProps) {
           />
           <button
             onClick={handleSearchPrev}
-            className="w-6 h-6 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+            className="w-6 h-6 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
           >
             ^
           </button>
           <button
             onClick={handleSearch}
-            className="w-6 h-6 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+            className="w-6 h-6 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
           >
             v
           </button>
           <button
             onClick={handleSearchClose}
-            className="w-6 h-6 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+            className="w-6 h-6 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
           >
             X
           </button>
@@ -258,7 +258,7 @@ export function Terminal({ sessionId }: TerminalProps) {
         <select
           value={themeName}
           onChange={(e) => setThemeName(e.target.value)}
-          className="h-6 px-1 bg-bg-2 border border-border rounded text-[10px] text-fg-2 focus:outline-none focus:border-accent"
+          className="h-6 px-1 bg-bg-2 border border-border rounded text-2xs text-fg-2 focus:outline-none focus:border-accent"
         >
           {Object.entries(themes).map(([key, theme]) => (
             <option key={key} value={key}>

@@ -40,7 +40,7 @@ export function SplitView({ sessionId, direction = "vertical" }: SplitViewProps)
             {splits.length > 1 && (
               <button
                 onClick={() => removeSplit(index)}
-                className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-error bg-bg-2/80 rounded text-[10px]"
+                className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-error bg-bg-2/80 rounded text-2xs"
                 title="Close split"
               >
                 X
@@ -66,7 +66,7 @@ export function SplitView({ sessionId, direction = "vertical" }: SplitViewProps)
       >
         <button
           onClick={addSplit}
-          className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 bg-bg-2/80 rounded text-[10px]"
+          className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 bg-bg-2/80 rounded text-2xs"
           title="Split"
         >
           +

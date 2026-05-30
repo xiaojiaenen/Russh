@@ -83,11 +83,11 @@ export function BatchPanel({ connections }: BatchPanelProps) {
           <div className="flex gap-2">
             <button
               onClick={selectAll}
-              className="text-[10px] text-fg-2 hover:text-fg-0"
+              className="text-2xs text-fg-2 hover:text-fg-0"
             >
               Select All
             </button>
-            <span className="text-[10px] text-fg-2">
+            <span className="text-2xs text-fg-2">
               {selectedIds.size} selected
             </span>
           </div>
@@ -97,7 +97,7 @@ export function BatchPanel({ connections }: BatchPanelProps) {
             <button
               key={conn.id}
               onClick={() => toggleSelect(conn.id)}
-              className={`px-2 py-1 text-[10px] rounded border ${
+              className={`px-2 py-1 text-2xs rounded border ${
                 selectedIds.has(conn.id)
                   ? "border-accent text-accent bg-accent/10"
                   : "border-border text-fg-2 hover:text-fg-0"
@@ -145,18 +145,18 @@ export function BatchPanel({ connections }: BatchPanelProps) {
                 }`}
               >
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-[10px] text-fg-0 font-mono">
+                  <span className="text-2xs text-fg-0 font-mono">
                     {r.server_name}
                   </span>
                   <span
-                    className={`text-[10px] ${
+                    className={`text-2xs ${
                       r.success ? "text-success" : "text-error"
                     }`}
                   >
                     {r.success ? "OK" : "FAILED"}
                   </span>
                 </div>
-                <pre className="text-[10px] text-fg-2 font-mono whitespace-pre-wrap">
+                <pre className="text-2xs text-fg-2 font-mono whitespace-pre-wrap">
                   {r.output}
                 </pre>
               </div>

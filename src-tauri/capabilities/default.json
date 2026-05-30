@@ -15,7 +15,6 @@
     "core:event:allow-emit",
     "core:webview:default",
     "core:webview:allow-internal-toggle-devtools",
-    "store:default",
-    "shell:allow-open"
+    "store:default"
   ]
 }

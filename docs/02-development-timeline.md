@@ -35,17 +35,17 @@ Week  1──2──3──4──5──6──7──8──9──10──11�
 
 ### Week 1：项目初始化
 
-| 任务 | 优先级 | 产出 |
-|------|--------|------|
-| 初始化 Tauri v2.0 项目 | P0 | 可编译运行的空白窗口 |
-| 配置 React + TypeScript + Vite | P0 | 前端开发环境就绪 |
-| 集成 shadcn/ui + Tailwind CSS | P0 | 组件库可用 |
-| 配置 ESLint + Prettier + rustfmt | P1 | 代码规范统一 |
-| 配置 Git hooks（husky + lint-staged） | P1 | 提交前自动检查 |
-| 搭建 GitHub Actions CI（三平台） | P1 | 自动构建可用 |
-| 设计系统基础变量（色彩/字体/间距） | P0 | CSS 变量体系就绪 |
+| 任务 | 优先级 | 产出 | 状态 |
+|------|--------|------|------|
+| 初始化 Tauri v2.0 项目 | P0 | 可编译运行的空白窗口 | [x] |
+| 配置 React + TypeScript + Vite | P0 | 前端开发环境就绪 | [x] |
+| 集成 Tailwind CSS | P0 | 样式系统可用 | [x] |
+| 配置 ESLint + Prettier + rustfmt | P1 | 代码规范统一 | [ ] |
+| 配置 Git hooks（husky + lint-staged） | P1 | 提交前自动检查 | [ ] |
+| 搭建 GitHub Actions CI（三平台） | P1 | 自动构建可用 | [ ] |
+| 设计系统基础变量（色彩/字体/间距） | P0 | CSS 变量体系就绪 | [x] |
 
-**里程碑 M1**：`cargo tauri dev` 一键启动，显示带设计系统变量的空白窗口。
+**里程碑 M1**：cargo tauri dev 一键启动，显示带设计系统变量的空白窗口。 [已完成]
 
 ### Week 2：主窗口框架
 

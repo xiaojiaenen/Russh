@@ -6,11 +6,12 @@ interface SidebarProps {
   connections: ConnectionConfig[];
   onConnect: (config: ConnectionConfig) => void;
   onOpenSftp: (config: ConnectionConfig) => void;
+  onOpenMonitor: (config: ConnectionConfig) => void;
   onSave: (config: ConnectionConfig) => void;
   onDelete: (configId: string) => void;
 }
 
-export function Sidebar({ connections, onConnect, onOpenSftp, onSave, onDelete }: SidebarProps) {
+export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onSave, onDelete }: SidebarProps) {
   const [search, setSearch] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [editingConfig, setEditingConfig] = useState<ConnectionConfig | null>(null);
@@ -100,6 +101,16 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onSave, onDelete }
                     title="Open SFTP"
                   >
                     F
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenMonitor(config);
+                    }}
+                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+                    title="Open Monitor"
+                  >
+                    M
                   </button>
                   <button
                     onClick={(e) => {

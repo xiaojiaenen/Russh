@@ -36,6 +36,12 @@ pub fn run() {
             commands::sftp::sftp_delete,
             commands::sftp::sftp_rename,
             commands::sftp::sftp_mkdir,
+            commands::monitor::get_cpu_usage,
+            commands::monitor::get_memory_usage,
+            commands::monitor::get_disk_usage,
+            commands::monitor::get_network_usage,
+            commands::monitor::get_process_list,
+            commands::monitor::kill_process,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::Moved(position) = event {

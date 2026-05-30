@@ -1,0 +1,10 @@
+/Users/xiaojia/code/Russh/src-tauri/target/debug/deps/toml_writer-221b9d998e8d411a.d: /Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/lib.rs /Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/integer.rs /Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/key.rs /Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/string.rs /Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/value.rs /Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/write.rs
+
+/Users/xiaojia/code/Russh/src-tauri/target/debug/deps/libtoml_writer-221b9d998e8d411a.rmeta: /Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/lib.rs /Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/integer.rs /Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/key.rs /Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/string.rs /Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/value.rs /Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/write.rs
+
+/Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/lib.rs:
+/Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/integer.rs:
+/Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/key.rs:
+/Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/string.rs:
+/Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/value.rs:
+/Users/xiaojia/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/toml_writer-1.1.1+spec-1.1.0/src/write.rs:

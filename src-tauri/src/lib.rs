@@ -1,6 +1,7 @@
 mod commands;
 mod models;
 
+use commands::ai::AiState;
 use commands::ssh::AppState;
 use commands::tunnel::TunnelManager;
 use tauri::{Manager, WindowEvent};
@@ -14,11 +15,13 @@ pub fn run() {
 
     let app_state = AppState::default();
     let tunnel_manager = TunnelManager::default();
+    let ai_state = AiState::default();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(app_state)
         .manage(tunnel_manager)
+        .manage(ai_state)
         .invoke_handler(tauri::generate_handler![
             commands::app::get_app_info,
             commands::app::get_platform,
@@ -50,6 +53,13 @@ pub fn run() {
             commands::tunnel::tunnel_create_dynamic,
             commands::tunnel::tunnel_close,
             commands::tunnel::tunnel_list,
+            commands::ai::ai_save_config,
+            commands::ai::ai_list_configs,
+            commands::ai::ai_delete_config,
+            commands::ai::ai_test_connection,
+            commands::ai::ai_nl_to_command,
+            commands::ai::ai_analyze_error,
+            commands::ai::ai_chat,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::Moved(position) = event {

@@ -5,6 +5,7 @@ import { Terminal } from "./components/Terminal";
 import { SftpPanel } from "./components/SftpPanel";
 import { MonitorPanel } from "./components/MonitorPanel";
 import { TunnelPanel } from "./components/TunnelPanel";
+import { AiPanel } from "./components/AiPanel";
 import { useConnectionStore } from "./stores/connection-store";
 import { ConnectionConfig } from "./types/connection";
 
@@ -134,6 +135,7 @@ function App() {
   }, []);
 
   const activeTab = tabs.find((t) => t.id === activeTabId) || tabs[0];
+  const [showAi, setShowAi] = useState(false);
 
   return (
     <div className="flex h-screen w-screen bg-bg-1 text-fg-0 font-sans">
@@ -182,23 +184,37 @@ function App() {
           >
             +
           </button>
+          <div className="flex-1" />
+          <button
+            onClick={() => setShowAi(!showAi)}
+            className={`h-8 px-2 text-[10px] rounded ${
+              showAi
+                ? "bg-accent text-bg-0"
+                : "text-fg-2 hover:text-fg-0 hover:bg-bg-3"
+            }`}
+          >
+            AI
+          </button>
         </div>
 
         {/* Content area */}
-        <div className="flex-1 overflow-hidden">
-          {activeTab?.sessionId ? (
-            activeTab.type === "sftp" ? (
-              <SftpPanel sessionId={activeTab.sessionId} />
-            ) : activeTab.type === "monitor" ? (
-              <MonitorPanel sessionId={activeTab.sessionId} />
-            ) : activeTab.type === "tunnel" ? (
-              <TunnelPanel sessionId={activeTab.sessionId} />
+        <div className="flex-1 overflow-hidden flex">
+          <div className="flex-1 overflow-hidden">
+            {activeTab?.sessionId ? (
+              activeTab.type === "sftp" ? (
+                <SftpPanel sessionId={activeTab.sessionId} />
+              ) : activeTab.type === "monitor" ? (
+                <MonitorPanel sessionId={activeTab.sessionId} />
+              ) : activeTab.type === "tunnel" ? (
+                <TunnelPanel sessionId={activeTab.sessionId} />
+              ) : (
+                <Terminal sessionId={activeTab.sessionId} />
+              )
             ) : (
-              <Terminal sessionId={activeTab.sessionId} />
-            )
-          ) : (
-            <WelcomeScreen appInfo={appInfo} />
-          )}
+              <WelcomeScreen appInfo={appInfo} />
+            )}
+          </div>
+          {showAi && <AiPanel sessionId={activeTab?.sessionId ?? null} />}
         </div>
 
         {/* Status bar */}

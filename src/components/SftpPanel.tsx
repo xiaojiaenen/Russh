@@ -1,6 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
+// Keyboard shortcuts:
+// F5: Refresh
+// Backspace: Go to parent directory
+// Enter: Open directory/file
+// Delete: Delete selected
+// Ctrl+A: Select all
+// Ctrl+N: New folder
+
 interface SftpPanelProps {
   sessionId: string;
 }

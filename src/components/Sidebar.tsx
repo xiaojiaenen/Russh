@@ -82,13 +82,14 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                 key={config.id}
                 className="group flex items-center px-2 py-1.5 rounded hover:bg-bg-3 cursor-pointer"
                 onClick={() => onConnect(config)}
+                title={`${config.name || config.host}\n${config.username}@${config.host}:${config.port}`}
               >
-                <div className="w-2 h-2 rounded-full bg-fg-2 mr-2 flex-shrink-0" />
+                <div className="w-2 h-2 rounded-full bg-success mr-2 flex-shrink-0" title="在线" />
                 <div className="flex-1 min-w-0">
-                  <div className="text-xs text-fg-0 truncate">
+                  <div className="text-sm text-fg-0 truncate">
                     {config.name || config.host}
                   </div>
-                  <div className="text-2xs text-fg-2 truncate">
+                  <div className="text-xs text-fg-2 truncate">
                     {config.username}@{config.host}:{config.port}
                   </div>
                 </div>
@@ -99,9 +100,9 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                       onOpenSftp(config);
                     }}
                     className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
-                    title="Open SFTP"
+                    title="SFTP 文件管理"
                   >
-                    F
+                    /
                   </button>
                   <button
                     onClick={(e) => {
@@ -109,9 +110,9 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                       onOpenMonitor(config);
                     }}
                     className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
-                    title="Open Monitor"
+                    title="系统监控"
                   >
-                    M
+                    #
                   </button>
                   <button
                     onClick={(e) => {
@@ -119,9 +120,9 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                       onOpenTunnel(config);
                     }}
                     className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
-                    title="Open Tunnel"
+                    title="端口转发"
                   >
-                    T
+                    ~
                   </button>
                   <button
                     onClick={(e) => {
@@ -129,6 +130,7 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                       handleEdit(config);
                     }}
                     className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
+                    title="编辑连接"
                   >
                     E
                   </button>
@@ -138,6 +140,7 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                       onDelete(config.id);
                     }}
                     className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-error rounded text-2xs"
+                    title="删除连接"
                   >
                     X
                   </button>

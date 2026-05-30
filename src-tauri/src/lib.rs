@@ -19,6 +19,7 @@ pub fn run() {
             commands::app::get_platform,
             commands::ssh::connect,
             commands::ssh::disconnect,
+            commands::ssh::ssh_write,
             commands::ssh::list_connections,
             commands::ssh::save_connection,
             commands::ssh::delete_connection,

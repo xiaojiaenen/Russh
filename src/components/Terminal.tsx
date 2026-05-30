@@ -1,4 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { Terminal as XTerminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { WebglAddon } from "@xterm/addon-webgl";
@@ -8,6 +10,17 @@ import "@xterm/xterm/css/xterm.css";
 
 interface TerminalProps {
   sessionId: string | null;
+}
+
+interface TerminalData {
+  session_id: string;
+  data: string;
+}
+
+interface ConnectionStatus {
+  session_id: string;
+  status: string;
+  message: string | null;
 }
 
 const THEME = {
@@ -38,6 +51,32 @@ export function Terminal({ sessionId }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<XTerminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const sessionIdRef = useRef<string | null>(sessionId);
+
+  // Keep ref in sync
+  useEffect(() => {
+    sessionIdRef.current = sessionId;
+  }, [sessionId]);
+
+  const handleTerminalData = useCallback(async (event: { payload: TerminalData }) => {
+    const { session_id, data } = event.payload;
+    if (session_id === sessionIdRef.current && termRef.current) {
+      termRef.current.write(data);
+    }
+  }, []);
+
+  const handleConnectionStatus = useCallback(async (event: { payload: ConnectionStatus }) => {
+    const { session_id, status, message } = event.payload;
+    if (session_id === sessionIdRef.current && termRef.current) {
+      const term = termRef.current;
+      if (status === "disconnected") {
+        term.writeln("\r\n\x1b[38;2;239;68;68mConnection closed\x1b[0m");
+        term.write("\x1b[38;2;161;161;170m>\x1b[0m ");
+      } else if (status === "error") {
+        term.writeln(`\r\n\x1b[38;2;239;68;68mError: ${message || "Unknown error"}\x1b[0m`);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -58,11 +97,10 @@ export function Terminal({ sessionId }: TerminalProps) {
     term.loadAddon(new SearchAddon());
     term.loadAddon(new WebLinksAddon());
 
-    // Try WebGL for better performance
     try {
       term.loadAddon(new WebglAddon());
     } catch {
-      // WebGL not available, fallback to canvas
+      // WebGL not available
     }
 
     term.open(containerRef.current);
@@ -76,29 +114,37 @@ export function Terminal({ sessionId }: TerminalProps) {
     term.writeln("");
     term.write("\x1b[38;2;161;161;170m>\x1b[0m ");
 
-    // Handle resize
+    // Resize observer
     const resizeObserver = new ResizeObserver(() => {
       fitAddon.fit();
     });
     resizeObserver.observe(containerRef.current);
 
+    // Listen for terminal output from backend
+    const unlistenData = listen<TerminalData>("terminal_data", handleTerminalData);
+    const unlistenStatus = listen<ConnectionStatus>("connection_status", handleConnectionStatus);
+
     return () => {
       resizeObserver.disconnect();
+      unlistenData.then((fn) => fn());
+      unlistenStatus.then((fn) => fn());
       term.dispose();
       termRef.current = null;
       fitAddonRef.current = null;
     };
-  }, []);
+  }, [handleTerminalData, handleConnectionStatus]);
 
-  // Handle keyboard input
+  // Handle keyboard input - send to backend
   useEffect(() => {
     const term = termRef.current;
-    if (!term) return;
+    if (!term || !sessionId) return;
 
-    const disposable = term.onData((data) => {
-      // In a real implementation, this would send data to the SSH session
-      // via invoke("ssh_write", { sessionId, data })
-      console.log("Terminal input:", data);
+    const disposable = term.onData(async (data) => {
+      try {
+        await invoke("ssh_write", { sessionId, data });
+      } catch (e) {
+        console.error("Failed to write to SSH:", e);
+      }
     });
 
     return () => disposable.dispose();

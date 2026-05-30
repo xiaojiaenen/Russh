@@ -19,58 +19,59 @@ export function Terminal({ sessionId }: TerminalProps) {
   const [themeName, setThemeName] = useState("ink");
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [ready, setReady] = useState(false);
+  const cleanupRef = useRef<(() => void) | null>(null);
 
-  // Create terminal with delay
+  // Create terminal immediately on mount
   useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!containerRef.current) return;
+    if (!containerRef.current || termRef.current) return;
 
-      const term = new XTerminal({
-        fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", ui-monospace, monospace',
-        fontSize: 16,
-        lineHeight: 1.4,
-        theme: getTheme(themeName).colors,
-        cursorBlink: true,
-        cursorStyle: "bar",
-        scrollback: 10000,
-        allowProposedApi: true,
-      });
+    const term = new XTerminal({
+      fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", ui-monospace, monospace',
+      fontSize: 16,
+      lineHeight: 1.4,
+      theme: getTheme(themeName).colors,
+      cursorBlink: true,
+      cursorStyle: "bar",
+      scrollback: 10000,
+      allowProposedApi: true,
+    });
 
-      const fitAddon = new FitAddon();
-      term.loadAddon(fitAddon);
-      term.loadAddon(new SearchAddon());
-      term.loadAddon(new WebLinksAddon());
+    const fitAddon = new FitAddon();
+    term.loadAddon(fitAddon);
+    term.loadAddon(new SearchAddon());
+    term.loadAddon(new WebLinksAddon());
 
-      term.open(containerRef.current);
-      fitAddon.fit();
+    term.open(containerRef.current);
+    fitAddon.fit();
 
-      termRef.current = term;
-      fitAddonRef.current = fitAddon;
-      setReady(true);
+    termRef.current = term;
+    fitAddonRef.current = fitAddon;
 
-      // Welcome
-      term.writeln("\x1b[38;2;245;158;11mRussh\x1b[0m - AI 原生 SSH 客户端");
-      term.writeln("");
-      term.write("\x1b[38;2;161;161;170m>\x1b[0m ");
+    // Welcome
+    term.writeln("\x1b[38;2;245;158;11mRussh\x1b[0m - AI 原生 SSH 客户端");
+    term.writeln("");
+    term.write("\x1b[38;2;161;161;170m>\x1b[0m ");
 
-      // Resize
-      const ro = new ResizeObserver(() => {
-        try { fitAddon.fit(); } catch {}
-      });
-      ro.observe(containerRef.current);
+    // Resize observer
+    const ro = new ResizeObserver(() => {
+      try { fitAddon.fit(); } catch {}
+    });
+    ro.observe(containerRef.current);
 
-      return () => {
-        ro.disconnect();
-        term.dispose();
-        termRef.current = null;
-        fitAddonRef.current = null;
-        setReady(false);
-      };
-    }, 100);
+    cleanupRef.current = () => {
+      ro.disconnect();
+      term.dispose();
+      termRef.current = null;
+      fitAddonRef.current = null;
+    };
 
-    return () => clearTimeout(timer);
-  }, []);
+    return () => {
+      if (cleanupRef.current) {
+        cleanupRef.current();
+        cleanupRef.current = null;
+      }
+    };
+  }, []); // Only run once on mount
 
   // Update theme
   useEffect(() => {
@@ -79,23 +80,18 @@ export function Terminal({ sessionId }: TerminalProps) {
     }
   }, [themeName]);
 
-  // Listen for SSH output
+  // Listen for SSH output - always active
   useEffect(() => {
-    if (!ready) return;
-
     const unlisten = listen<{ session_id: string; data: string }>("terminal_data", (event) => {
       if (event.payload.session_id === sessionId && termRef.current) {
         termRef.current.write(event.payload.data);
       }
     });
-
     return () => { unlisten.then(fn => fn()); };
-  }, [sessionId, ready]);
+  }, [sessionId]);
 
   // Listen for connection status
   useEffect(() => {
-    if (!ready) return;
-
     const unlisten = listen<{ session_id: string; status: string; message: string | null }>("connection_status", (event) => {
       if (event.payload.session_id === sessionId && termRef.current) {
         if (event.payload.status === "disconnected") {
@@ -106,24 +102,20 @@ export function Terminal({ sessionId }: TerminalProps) {
         }
       }
     });
-
     return () => { unlisten.then(fn => fn()); };
-  }, [sessionId, ready]);
+  }, [sessionId]);
 
-  // Handle keyboard input - DON'T echo, let server handle it
+  // Handle keyboard input
   useEffect(() => {
-    if (!ready) return;
     const term = termRef.current;
     if (!term || !sessionId) return;
 
     const disposable = term.onData((data) => {
-      // Just send to SSH, don't echo locally
-      // The server will echo back through terminal_data event
       invoke("ssh_write", { sessionId, data }).catch(() => {});
     });
 
     return () => { disposable.dispose(); };
-  }, [sessionId, ready]);
+  }, [sessionId]);
 
   function doSearch(prev = false) {
     console.log("Search:", searchQuery, prev ? "prev" : "next");

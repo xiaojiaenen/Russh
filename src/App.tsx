@@ -7,6 +7,7 @@ import { MonitorPanel } from "./components/MonitorPanel";
 import { TunnelPanel } from "./components/TunnelPanel";
 import { AiPanel } from "./components/AiPanel";
 import { BatchPanel } from "./components/BatchPanel";
+import { ScriptPanel } from "./components/ScriptPanel";
 import { useConnectionStore } from "./stores/connection-store";
 import { ConnectionConfig } from "./types/connection";
 
@@ -20,7 +21,7 @@ interface Tab {
   id: string;
   title: string;
   sessionId: string | null;
-  type: "terminal" | "sftp" | "monitor" | "tunnel" | "batch";
+  type: "terminal" | "sftp" | "monitor" | "tunnel" | "batch" | "scripts";
 }
 
 function App() {
@@ -115,6 +116,17 @@ function App() {
     setActiveTabId(newTab.id);
   }, []);
 
+  const handleOpenScripts = useCallback(() => {
+    const newTab: Tab = {
+      id: crypto.randomUUID(),
+      title: "Scripts",
+      sessionId: null,
+      type: "scripts",
+    };
+    setTabs((prev) => [...prev, newTab]);
+    setActiveTabId(newTab.id);
+  }, []);
+
   const handleCloseTab = useCallback(
     (tabId: string) => {
       setTabs((prev) => {
@@ -204,6 +216,12 @@ function App() {
             Batch
           </button>
           <button
+            onClick={handleOpenScripts}
+            className="h-8 px-2 text-[10px] text-fg-2 hover:text-fg-0 hover:bg-bg-3 rounded"
+          >
+            Scripts
+          </button>
+          <button
             onClick={() => setShowAi(!showAi)}
             className={`h-8 px-2 text-[10px] rounded ${
               showAi
@@ -230,6 +248,8 @@ function App() {
               )
             ) : activeTab?.type === "batch" ? (
               <BatchPanel connections={connections.map((c) => ({ id: c.id, name: c.name, host: c.host }))} />
+            ) : activeTab?.type === "scripts" ? (
+              <ScriptPanel onExecute={(cmd) => console.log("Execute:", cmd)} />
             ) : (
               <WelcomeScreen appInfo={appInfo} />
             )}

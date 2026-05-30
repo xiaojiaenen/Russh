@@ -3,6 +3,7 @@ pub mod app;
 pub mod audit;
 pub mod batch;
 pub mod config;
+pub mod scripts;
 pub mod monitor;
 pub mod security;
 pub mod sftp;

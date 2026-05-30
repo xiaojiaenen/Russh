@@ -156,6 +156,7 @@ pub async fn connect(
     }
 
     // Emit connected status
+    tracing::info!("SSH connected: session={}, host={}:{}", session_id, config.host, config.port);
     let _ = app.emit("connection_status", ConnectionStatus {
         session_id: session_id.clone(),
         status: "connected".to_string(),
@@ -176,6 +177,7 @@ pub async fn connect(
                     match msg {
                         Some(ChannelMsg::Data { ref data }) => {
                             let text = String::from_utf8_lossy(data).to_string();
+                            tracing::debug!("SSH recv: len={}, preview={:?}", data.len(), &text[..text.len().min(50)]);
                             let _ = app_clone.emit("terminal_data", TerminalData {
                                 session_id: emit_session_id.clone(),
                                 data: text,
@@ -249,6 +251,7 @@ pub async fn ssh_write(
     session_id: String,
     data: String,
 ) -> Result<(), String> {
+    tracing::info!("SSH write: session={}, len={}", session_id, data.len());
     let sessions = state.active_sessions.lock().await;
     if let Some(session) = sessions.get(&session_id) {
         if let Some(write_tx) = &session.write_tx {

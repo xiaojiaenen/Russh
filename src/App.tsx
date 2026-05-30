@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Sidebar } from "./components/Sidebar";
 import { Terminal } from "./components/Terminal";
+import { SftpPanel } from "./components/SftpPanel";
 import { useConnectionStore } from "./stores/connection-store";
 import { ConnectionConfig } from "./types/connection";
 
@@ -51,6 +52,22 @@ function App() {
     }
   }, []);
 
+  const handleOpenSftp = useCallback(async (config: ConnectionConfig) => {
+    try {
+      const sessionId = await invoke<string>("connect", { config });
+      const newTab: Tab = {
+        id: crypto.randomUUID(),
+        title: `SFTP - ${config.name || config.host}`,
+        sessionId,
+        type: "sftp",
+      };
+      setTabs((prev) => [...prev, newTab]);
+      setActiveTabId(newTab.id);
+    } catch (e) {
+      console.error("Connection failed:", e);
+    }
+  }, []);
+
   const handleCloseTab = useCallback(
     (tabId: string) => {
       setTabs((prev) => {
@@ -90,6 +107,7 @@ function App() {
       <Sidebar
         connections={connections}
         onConnect={handleConnect}
+        onOpenSftp={handleOpenSftp}
         onSave={saveConnection}
         onDelete={deleteConnection}
       />
@@ -133,7 +151,11 @@ function App() {
         {/* Content area */}
         <div className="flex-1 overflow-hidden">
           {activeTab?.sessionId ? (
-            <Terminal sessionId={activeTab.sessionId} />
+            activeTab.type === "sftp" ? (
+              <SftpPanel sessionId={activeTab.sessionId} />
+            ) : (
+              <Terminal sessionId={activeTab.sessionId} />
+            )
           ) : (
             <WelcomeScreen appInfo={appInfo} />
           )}

@@ -30,6 +30,12 @@ pub fn run() {
             commands::config::save_connections,
             commands::config::load_settings,
             commands::config::save_settings,
+            commands::sftp::sftp_list_dir,
+            commands::sftp::sftp_upload_file,
+            commands::sftp::sftp_download_file,
+            commands::sftp::sftp_delete,
+            commands::sftp::sftp_rename,
+            commands::sftp::sftp_mkdir,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::Moved(position) = event {

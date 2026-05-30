@@ -5,11 +5,12 @@ import { ConnectionDialog } from "./ConnectionDialog";
 interface SidebarProps {
   connections: ConnectionConfig[];
   onConnect: (config: ConnectionConfig) => void;
+  onOpenSftp: (config: ConnectionConfig) => void;
   onSave: (config: ConnectionConfig) => void;
   onDelete: (configId: string) => void;
 }
 
-export function Sidebar({ connections, onConnect, onSave, onDelete }: SidebarProps) {
+export function Sidebar({ connections, onConnect, onOpenSftp, onSave, onDelete }: SidebarProps) {
   const [search, setSearch] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [editingConfig, setEditingConfig] = useState<ConnectionConfig | null>(null);
@@ -90,6 +91,16 @@ export function Sidebar({ connections, onConnect, onSave, onDelete }: SidebarPro
                   </div>
                 </div>
                 <div className="hidden group-hover:flex items-center gap-1 ml-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenSftp(config);
+                    }}
+                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+                    title="Open SFTP"
+                  >
+                    F
+                  </button>
                   <button
                     onClick={(e) => {
                       e.stopPropagation();

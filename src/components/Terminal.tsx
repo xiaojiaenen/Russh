@@ -30,6 +30,7 @@ export function Terminal({ sessionId }: TerminalProps) {
   const fitAddonRef = useRef<FitAddon | null>(null);
   const searchAddonRef = useRef<SearchAddon | null>(null);
   const sessionIdRef = useRef<string | null>(sessionId);
+  const disposedRef = useRef(false);
   const [themeName, setThemeName] = useState("ink");
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -40,20 +41,28 @@ export function Terminal({ sessionId }: TerminalProps) {
 
   const handleTerminalData = useCallback(async (event: { payload: TerminalData }) => {
     const { session_id, data } = event.payload;
-    if (session_id === sessionIdRef.current && termRef.current) {
-      termRef.current.write(data);
+    if (session_id === sessionIdRef.current && termRef.current && !disposedRef.current) {
+      try {
+        termRef.current.write(data);
+      } catch {
+        // Terminal may have been disposed
+      }
     }
   }, []);
 
   const handleConnectionStatus = useCallback(async (event: { payload: ConnectionStatus }) => {
     const { session_id, status, message } = event.payload;
-    if (session_id === sessionIdRef.current && termRef.current) {
-      const term = termRef.current;
-      if (status === "disconnected") {
-        term.writeln("\r\n\x1b[38;2;239;68;68mConnection closed\x1b[0m");
-        term.write("\x1b[38;2;161;161;170m>\x1b[0m ");
-      } else if (status === "error") {
-        term.writeln(`\r\n\x1b[38;2;239;68;68mError: ${message || "Unknown error"}\x1b[0m`);
+    if (session_id === sessionIdRef.current && termRef.current && !disposedRef.current) {
+      try {
+        const term = termRef.current;
+        if (status === "disconnected") {
+          term.writeln("\r\n\x1b[38;2;239;68;68m连接已断开\x1b[0m");
+          term.write("\x1b[38;2;161;161;170m>\x1b[0m ");
+        } else if (status === "error") {
+          term.writeln(`\r\n\x1b[38;2;239;68;68m错误: ${message || "未知错误"}\x1b[0m`);
+        }
+      } catch {
+        // Terminal may have been disposed
       }
     }
   }, []);
@@ -61,10 +70,12 @@ export function Terminal({ sessionId }: TerminalProps) {
   useEffect(() => {
     if (!containerRef.current) return;
 
+    disposedRef.current = false;
+
     const term = new XTerminal({
       fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", ui-monospace, monospace',
-      fontSize: 14,
-      lineHeight: 1.5,
+      fontSize: 16,
+      lineHeight: 1.4,
       theme: getTheme(themeName).colors,
       cursorBlink: true,
       cursorStyle: "bar",
@@ -92,13 +103,19 @@ export function Terminal({ sessionId }: TerminalProps) {
     searchAddonRef.current = searchAddon;
 
     // Welcome message
-    term.writeln("\x1b[38;2;245;158;11mRussh\x1b[0m - AI-native SSH client");
+    term.writeln("\x1b[38;2;245;158;11mRussh\x1b[0m - AI 原生 SSH 客户端");
     term.writeln("");
     term.write("\x1b[38;2;161;161;170m>\x1b[0m ");
 
     // Resize observer
     const resizeObserver = new ResizeObserver(() => {
-      fitAddon.fit();
+      if (!disposedRef.current) {
+        try {
+          fitAddon.fit();
+        } catch {
+          // Ignore resize errors
+        }
+      }
     });
     resizeObserver.observe(containerRef.current);
 
@@ -107,10 +124,15 @@ export function Terminal({ sessionId }: TerminalProps) {
     const unlistenStatus = listen<ConnectionStatus>("connection_status", handleConnectionStatus);
 
     return () => {
+      disposedRef.current = true;
       resizeObserver.disconnect();
       unlistenData.then((fn) => fn());
       unlistenStatus.then((fn) => fn());
-      term.dispose();
+      try {
+        term.dispose();
+      } catch {
+        // Ignore dispose errors
+      }
       termRef.current = null;
       fitAddonRef.current = null;
       searchAddonRef.current = null;
@@ -120,9 +142,10 @@ export function Terminal({ sessionId }: TerminalProps) {
   // Handle keyboard input
   useEffect(() => {
     const term = termRef.current;
-    if (!term || !sessionId) return;
+    if (!term || !sessionId || disposedRef.current) return;
 
     const disposable = term.onData(async (data) => {
+      if (disposedRef.current) return;
       try {
         await invoke("ssh_write", { sessionId, data });
       } catch (e) {
@@ -130,25 +153,35 @@ export function Terminal({ sessionId }: TerminalProps) {
       }
     });
 
-    return () => disposable.dispose();
+    return () => {
+      try {
+        disposable.dispose();
+      } catch {
+        // Ignore
+      }
+    };
   }, [sessionId]);
 
   // Handle theme change
   useEffect(() => {
-    if (termRef.current) {
-      termRef.current.options.theme = getTheme(themeName).colors;
+    if (termRef.current && !disposedRef.current) {
+      try {
+        termRef.current.options.theme = getTheme(themeName).colors;
+      } catch {
+        // Ignore
+      }
     }
   }, [themeName]);
 
   // Search handlers
   function handleSearch() {
-    if (searchAddonRef.current && searchQuery) {
+    if (searchAddonRef.current && searchQuery && !disposedRef.current) {
       searchAddonRef.current.findNext(searchQuery);
     }
   }
 
   function handleSearchPrev() {
-    if (searchAddonRef.current && searchQuery) {
+    if (searchAddonRef.current && searchQuery && !disposedRef.current) {
       searchAddonRef.current.findPrevious(searchQuery);
     }
   }
@@ -156,8 +189,12 @@ export function Terminal({ sessionId }: TerminalProps) {
   function handleSearchClose() {
     setShowSearch(false);
     setSearchQuery("");
-    if (searchAddonRef.current) {
-      searchAddonRef.current.clearDecorations();
+    if (searchAddonRef.current && !disposedRef.current) {
+      try {
+        searchAddonRef.current.clearDecorations();
+      } catch {
+        // Ignore
+      }
     }
   }
 
@@ -191,7 +228,7 @@ export function Terminal({ sessionId }: TerminalProps) {
                 e.shiftKey ? handleSearchPrev() : handleSearch();
               }
             }}
-            placeholder="Search..."
+            placeholder="搜索..."
             className="w-48 h-6 px-2 bg-bg-1 border border-border rounded text-xs text-fg-0 placeholder:text-fg-2 focus:outline-none focus:border-accent"
             autoFocus
           />

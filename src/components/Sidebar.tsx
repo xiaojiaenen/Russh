@@ -1,64 +1,33 @@
-import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
+import { useState } from "react";
 import { ConnectionConfig, createDefaultConnection } from "../types/connection";
 import { ConnectionDialog } from "./ConnectionDialog";
 
 interface SidebarProps {
+  connections: ConnectionConfig[];
   onConnect: (config: ConnectionConfig) => void;
-  activeSessionId: string | null;
+  onSave: (config: ConnectionConfig) => void;
+  onDelete: (configId: string) => void;
 }
 
-export function Sidebar({ onConnect, activeSessionId: _activeSessionId }: SidebarProps) {
-  const [connections, setConnections] = useState<ConnectionConfig[]>([]);
+export function Sidebar({ connections, onConnect, onSave, onDelete }: SidebarProps) {
   const [search, setSearch] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [editingConfig, setEditingConfig] = useState<ConnectionConfig | null>(null);
 
-  useEffect(() => {
-    loadConnections();
-  }, []);
-
-  async function loadConnections() {
-    try {
-      const list = await invoke<ConnectionConfig[]>("list_connections");
-      setConnections(list);
-    } catch (e) {
-      console.error("Failed to load connections:", e);
-    }
-  }
-
-  async function handleSave(config: ConnectionConfig) {
-    try {
-      await invoke("save_connection", { config });
-      await loadConnections();
-      setShowDialog(false);
-      setEditingConfig(null);
-    } catch (e) {
-      console.error("Failed to save:", e);
-    }
-  }
-
-  async function handleDelete(configId: string) {
-    try {
-      await invoke("delete_connection", { configId });
-      await loadConnections();
-    } catch (e) {
-      console.error("Failed to delete:", e);
-    }
-  }
-
-  function handleConnect(config: ConnectionConfig) {
-    onConnect(config);
-  }
-
-  function handleEdit(config: ConnectionConfig) {
-    setEditingConfig(config);
-    setShowDialog(true);
-  }
-
   function handleNewConnection() {
     setEditingConfig(createDefaultConnection());
     setShowDialog(true);
+  }
+
+  function handleEdit(config: ConnectionConfig) {
+    setEditingConfig({ ...config });
+    setShowDialog(true);
+  }
+
+  function handleSave(config: ConnectionConfig) {
+    onSave(config);
+    setShowDialog(false);
+    setEditingConfig(null);
   }
 
   const filtered = connections.filter(
@@ -109,7 +78,7 @@ export function Sidebar({ onConnect, activeSessionId: _activeSessionId }: Sideba
               <div
                 key={config.id}
                 className="group flex items-center px-2 py-1.5 rounded hover:bg-bg-3 cursor-pointer"
-                onClick={() => handleConnect(config)}
+                onClick={() => onConnect(config)}
               >
                 <div className="w-2 h-2 rounded-full bg-fg-2 mr-2 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
@@ -133,7 +102,7 @@ export function Sidebar({ onConnect, activeSessionId: _activeSessionId }: Sideba
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDelete(config.id);
+                      onDelete(config.id);
                     }}
                     className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-error rounded text-[10px]"
                   >

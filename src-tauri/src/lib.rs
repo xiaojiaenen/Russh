@@ -24,6 +24,10 @@ pub fn run() {
             commands::ssh::save_connection,
             commands::ssh::delete_connection,
             commands::ssh::test_connection,
+            commands::config::load_connections,
+            commands::config::save_connections,
+            commands::config::load_settings,
+            commands::config::save_settings,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

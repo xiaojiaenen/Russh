@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Sidebar } from "./components/Sidebar";
 import { Terminal } from "./components/Terminal";
+import { useConnectionStore } from "./stores/connection-store";
 import { ConnectionConfig } from "./types/connection";
 
 interface AppInfo {
@@ -23,6 +24,12 @@ function App() {
     { id: "welcome", title: "Welcome", sessionId: null, type: "terminal" },
   ]);
   const [activeTabId, setActiveTabId] = useState("welcome");
+
+  const {
+    connections,
+    saveConnection,
+    deleteConnection,
+  } = useConnectionStore();
 
   useEffect(() => {
     invoke<AppInfo>("get_app_info").then(setAppInfo);
@@ -80,7 +87,12 @@ function App() {
   return (
     <div className="flex h-screen w-screen bg-bg-1 text-fg-0 font-sans">
       {/* Sidebar */}
-      <Sidebar onConnect={handleConnect} activeSessionId={activeTab?.sessionId ?? null} />
+      <Sidebar
+        connections={connections}
+        onConnect={handleConnect}
+        onSave={saveConnection}
+        onDelete={deleteConnection}
+      />
 
       {/* Main content */}
       <main className="flex-1 flex flex-col">

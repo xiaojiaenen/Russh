@@ -3,7 +3,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Terminal as XTerminal } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
-import { WebglAddon } from "@xterm/addon-webgl";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebLinksAddon } from "@xterm/addon-web-links";
 import { getTheme, themes } from "../themes/terminal-themes";
@@ -92,15 +91,7 @@ export function Terminal({ sessionId }: TerminalProps) {
     // Open first (creates canvas in DOM)
     term.open(containerRef.current);
 
-    // Then load WebGL (needs canvas to exist)
-    try {
-      const webglAddon = new WebglAddon();
-      term.loadAddon(webglAddon);
-    } catch {
-      // WebGL not available, fallback to canvas renderer
-    }
-
-    // Finally fit (needs renderer to be ready)
+    // Fit after open
     fitAddon.fit();
 
     termRef.current = term;

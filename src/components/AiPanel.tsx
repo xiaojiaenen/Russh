@@ -151,9 +151,9 @@ export function AiPanel({ sessionId }: AiPanelProps) {
         )}
 
         {messages.map((msg, i) => (
-          <div key={i} className="text-xs">
-            <div className="text-2xs text-fg-2 mb-1">
-              {msg.role === "user" ? "You" : "AI"}
+          <div key={i} className="text-sm">
+            <div className="text-xs text-fg-2 mb-1">
+              {msg.role === "user" ? "用户" : "AI"}
             </div>
             <div className="text-fg-0 whitespace-pre-wrap">
               {msg.content}
@@ -184,7 +184,7 @@ export function AiPanel({ sessionId }: AiPanelProps) {
               }
             }}
             placeholder="输入问题..."
-            className="flex-1 h-8 px-2 bg-bg-1 border border-border rounded text-xs text-fg-0 placeholder:text-fg-2 focus:outline-none focus:border-accent"
+            className="flex-1 h-8 px-2 bg-bg-1 border border-border rounded text-sm text-fg-0 placeholder:text-fg-2 focus:outline-none focus:border-accent"
           />
           <button
             onClick={handleNlToCommand}

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { Terminal as XTerminal } from "@xterm/xterm";
@@ -6,6 +6,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import { WebglAddon } from "@xterm/addon-webgl";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebLinksAddon } from "@xterm/addon-web-links";
+import { getTheme, themes } from "../themes/terminal-themes";
 import "@xterm/xterm/css/xterm.css";
 
 interface TerminalProps {
@@ -23,37 +24,16 @@ interface ConnectionStatus {
   message: string | null;
 }
 
-const THEME = {
-  background: "#111113",
-  foreground: "#fafafa",
-  cursor: "#f59e0b",
-  cursorAccent: "#111113",
-  selectionBackground: "rgba(245, 158, 11, 0.2)",
-  black: "#18181b",
-  red: "#ef4444",
-  green: "#22c55e",
-  yellow: "#eab308",
-  blue: "#3b82f6",
-  magenta: "#a855f7",
-  cyan: "#06b6d4",
-  white: "#fafafa",
-  brightBlack: "#52525b",
-  brightRed: "#f87171",
-  brightGreen: "#4ade80",
-  brightYellow: "#facc15",
-  brightBlue: "#60a5fa",
-  brightMagenta: "#c084fc",
-  brightCyan: "#22d3ee",
-  brightWhite: "#ffffff",
-};
-
 export function Terminal({ sessionId }: TerminalProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const termRef = useRef<XTerminal | null>(null);
   const fitAddonRef = useRef<FitAddon | null>(null);
+  const searchAddonRef = useRef<SearchAddon | null>(null);
   const sessionIdRef = useRef<string | null>(sessionId);
+  const [themeName, setThemeName] = useState("ink");
+  const [showSearch, setShowSearch] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Keep ref in sync
   useEffect(() => {
     sessionIdRef.current = sessionId;
   }, [sessionId]);
@@ -85,7 +65,7 @@ export function Terminal({ sessionId }: TerminalProps) {
       fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", ui-monospace, monospace',
       fontSize: 14,
       lineHeight: 1.5,
-      theme: THEME,
+      theme: getTheme(themeName).colors,
       cursorBlink: true,
       cursorStyle: "bar",
       scrollback: 10000,
@@ -94,7 +74,8 @@ export function Terminal({ sessionId }: TerminalProps) {
 
     const fitAddon = new FitAddon();
     term.loadAddon(fitAddon);
-    term.loadAddon(new SearchAddon());
+    const searchAddon = new SearchAddon();
+    term.loadAddon(searchAddon);
     term.loadAddon(new WebLinksAddon());
 
     try {
@@ -108,6 +89,7 @@ export function Terminal({ sessionId }: TerminalProps) {
 
     termRef.current = term;
     fitAddonRef.current = fitAddon;
+    searchAddonRef.current = searchAddon;
 
     // Welcome message
     term.writeln("\x1b[38;2;245;158;11mRussh\x1b[0m - AI-native SSH client");
@@ -120,7 +102,7 @@ export function Terminal({ sessionId }: TerminalProps) {
     });
     resizeObserver.observe(containerRef.current);
 
-    // Listen for terminal output from backend
+    // Listen for terminal output
     const unlistenData = listen<TerminalData>("terminal_data", handleTerminalData);
     const unlistenStatus = listen<ConnectionStatus>("connection_status", handleConnectionStatus);
 
@@ -131,10 +113,11 @@ export function Terminal({ sessionId }: TerminalProps) {
       term.dispose();
       termRef.current = null;
       fitAddonRef.current = null;
+      searchAddonRef.current = null;
     };
-  }, [handleTerminalData, handleConnectionStatus]);
+  }, [handleTerminalData, handleConnectionStatus, themeName]);
 
-  // Handle keyboard input - send to backend
+  // Handle keyboard input
   useEffect(() => {
     const term = termRef.current;
     if (!term || !sessionId) return;
@@ -150,10 +133,106 @@ export function Terminal({ sessionId }: TerminalProps) {
     return () => disposable.dispose();
   }, [sessionId]);
 
+  // Handle theme change
+  useEffect(() => {
+    if (termRef.current) {
+      termRef.current.options.theme = getTheme(themeName).colors;
+    }
+  }, [themeName]);
+
+  // Search handlers
+  function handleSearch() {
+    if (searchAddonRef.current && searchQuery) {
+      searchAddonRef.current.findNext(searchQuery);
+    }
+  }
+
+  function handleSearchPrev() {
+    if (searchAddonRef.current && searchQuery) {
+      searchAddonRef.current.findPrevious(searchQuery);
+    }
+  }
+
+  function handleSearchClose() {
+    setShowSearch(false);
+    setSearchQuery("");
+    if (searchAddonRef.current) {
+      searchAddonRef.current.clearDecorations();
+    }
+  }
+
+  // Keyboard shortcut for search (Cmd+F)
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key === "f") {
+        e.preventDefault();
+        setShowSearch((prev) => !prev);
+      }
+      if (e.key === "Escape" && showSearch) {
+        handleSearchClose();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showSearch, searchQuery]);
+
   return (
-    <div
-      ref={containerRef}
-      className="w-full h-full bg-bg-1"
-    />
+    <div className="relative w-full h-full">
+      {/* Search bar */}
+      {showSearch && (
+        <div className="absolute top-0 right-0 z-10 flex items-center gap-1 p-1 bg-bg-2 border border-border rounded-bl">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.shiftKey ? handleSearchPrev() : handleSearch();
+              }
+            }}
+            placeholder="Search..."
+            className="w-48 h-6 px-2 bg-bg-1 border border-border rounded text-xs text-fg-0 placeholder:text-fg-2 focus:outline-none focus:border-accent"
+            autoFocus
+          />
+          <button
+            onClick={handleSearchPrev}
+            className="w-6 h-6 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+          >
+            ^
+          </button>
+          <button
+            onClick={handleSearch}
+            className="w-6 h-6 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+          >
+            v
+          </button>
+          <button
+            onClick={handleSearchClose}
+            className="w-6 h-6 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+          >
+            X
+          </button>
+        </div>
+      )}
+
+      {/* Theme selector */}
+      <div className="absolute bottom-2 right-2 z-10">
+        <select
+          value={themeName}
+          onChange={(e) => setThemeName(e.target.value)}
+          className="h-6 px-1 bg-bg-2 border border-border rounded text-[10px] text-fg-2 focus:outline-none focus:border-accent"
+        >
+          {Object.entries(themes).map(([key, theme]) => (
+            <option key={key} value={key}>
+              {theme.name}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      {/* Terminal container */}
+      <div ref={containerRef} className="w-full h-full bg-bg-1" />
+    </div>
   );
 }

@@ -2,6 +2,10 @@ import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
+// Keyboard shortcuts:
+// Ctrl+A: Select all servers
+// Enter: Execute command (when command input is focused)
+
 interface BatchPanelProps {
   connections: Array<{ id: string; name: string; host: string }>;
 }

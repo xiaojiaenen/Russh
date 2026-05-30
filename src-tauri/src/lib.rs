@@ -2,6 +2,8 @@ mod commands;
 mod models;
 
 use commands::ssh::AppState;
+use tauri::{Manager, WindowEvent};
+use tauri_plugin_store::StoreExt;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -29,6 +31,57 @@ pub fn run() {
             commands::config::load_settings,
             commands::config::save_settings,
         ])
+        .on_window_event(|window, event| {
+            if let WindowEvent::Moved(position) = event {
+                // Save window position on move
+                if let Ok(store) = window.store("russh.json") {
+                    let key = format!("window_position_{}", window.label());
+                    let value = serde_json::json!({
+                        "x": position.x,
+                        "y": position.y,
+                    });
+                    store.set(key, value);
+                }
+            }
+            if let WindowEvent::Resized(size) = event {
+                // Save window size on resize
+                if let Ok(store) = window.store("russh.json") {
+                    let key = format!("window_size_{}", window.label());
+                    let value = serde_json::json!({
+                        "width": size.width,
+                        "height": size.height,
+                    });
+                    store.set(key, value);
+                }
+            }
+        })
+        .setup(|app| {
+            // Restore window size and position
+            let window = app.get_webview_window("main").unwrap();
+            let store = app.store("russh.json").map_err(|e| e.to_string())?;
+
+            // Restore size
+            let size_key = format!("window_size_{}", window.label());
+            if let Some(size_val) = store.get(&size_key) {
+                if let (Some(w), Some(h)) = (size_val.get("width"), size_val.get("height")) {
+                    if let (Some(w), Some(h)) = (w.as_f64(), h.as_f64()) {
+                        let _ = window.set_size(tauri::LogicalSize::new(w, h));
+                    }
+                }
+            }
+
+            // Restore position
+            let pos_key = format!("window_position_{}", window.label());
+            if let Some(pos_val) = store.get(&pos_key) {
+                if let (Some(x), Some(y)) = (pos_val.get("x"), pos_val.get("y")) {
+                    if let (Some(x), Some(y)) = (x.as_f64(), y.as_f64()) {
+                        let _ = window.set_position(tauri::LogicalPosition::new(x, y));
+                    }
+                }
+            }
+
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

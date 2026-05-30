@@ -19,50 +19,59 @@ export function Terminal({ sessionId }: TerminalProps) {
   const [themeName, setThemeName] = useState("ink");
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [ready, setReady] = useState(false);
 
-  // Create terminal once
+  // Create terminal with delay to ensure container is rendered
   useEffect(() => {
-    if (!containerRef.current) return;
+    const timer = setTimeout(() => {
+      if (!containerRef.current) return;
 
-    const term = new XTerminal({
-      fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", ui-monospace, monospace',
-      fontSize: 16,
-      lineHeight: 1.4,
-      theme: getTheme(themeName).colors,
-      cursorBlink: true,
-      cursorStyle: "bar",
-      scrollback: 10000,
-      allowProposedApi: true,
-    });
+      const term = new XTerminal({
+        fontFamily: '"JetBrains Mono", "Fira Code", "SF Mono", ui-monospace, monospace',
+        fontSize: 16,
+        lineHeight: 1.4,
+        theme: getTheme(themeName).colors,
+        cursorBlink: true,
+        cursorStyle: "bar",
+        scrollback: 10000,
+        allowProposedApi: true,
+        // Disable canvas rendering to avoid dimension errors
+        rendererType: "dom",
+      });
 
-    const fitAddon = new FitAddon();
-    term.loadAddon(fitAddon);
-    term.loadAddon(new SearchAddon());
-    term.loadAddon(new WebLinksAddon());
+      const fitAddon = new FitAddon();
+      term.loadAddon(fitAddon);
+      term.loadAddon(new SearchAddon());
+      term.loadAddon(new WebLinksAddon());
 
-    term.open(containerRef.current);
-    fitAddon.fit();
+      term.open(containerRef.current);
+      fitAddon.fit();
 
-    termRef.current = term;
-    fitAddonRef.current = fitAddon;
+      termRef.current = term;
+      fitAddonRef.current = fitAddon;
+      setReady(true);
 
-    // Welcome
-    term.writeln("\x1b[38;2;245;158;11mRussh\x1b[0m - AI 原生 SSH 客户端");
-    term.writeln("");
-    term.write("\x1b[38;2;161;161;170m>\x1b[0m ");
+      // Welcome
+      term.writeln("\x1b[38;2;245;158;11mRussh\x1b[0m - AI 原生 SSH 客户端");
+      term.writeln("");
+      term.write("\x1b[38;2;161;161;170m>\x1b[0m ");
 
-    // Resize
-    const ro = new ResizeObserver(() => {
-      try { fitAddon.fit(); } catch {}
-    });
-    ro.observe(containerRef.current);
+      // Resize
+      const ro = new ResizeObserver(() => {
+        try { fitAddon.fit(); } catch {}
+      });
+      ro.observe(containerRef.current);
 
-    return () => {
-      ro.disconnect();
-      term.dispose();
-      termRef.current = null;
-      fitAddonRef.current = null;
-    };
+      return () => {
+        ro.disconnect();
+        term.dispose();
+        termRef.current = null;
+        fitAddonRef.current = null;
+        setReady(false);
+      };
+    }, 100);
+
+    return () => clearTimeout(timer);
   }, []);
 
   // Update theme
@@ -74,37 +83,40 @@ export function Terminal({ sessionId }: TerminalProps) {
 
   // Listen for SSH output
   useEffect(() => {
+    if (!ready) return;
     const term = termRef.current;
     if (!term) return;
 
     const unlisten = listen<{ session_id: string; data: string }>("terminal_data", (event) => {
-      if (event.payload.session_id === sessionId) {
-        term.write(event.payload.data);
+      if (event.payload.session_id === sessionId && termRef.current) {
+        termRef.current.write(event.payload.data);
       }
     });
 
     return () => { unlisten.then(fn => fn()); };
-  }, [sessionId]);
+  }, [sessionId, ready]);
 
   // Listen for connection status
   useEffect(() => {
+    if (!ready) return;
     const term = termRef.current;
     if (!term) return;
 
     const unlisten = listen<{ session_id: string; status: string; message: string | null }>("connection_status", (event) => {
-      if (event.payload.session_id === sessionId) {
+      if (event.payload.session_id === sessionId && termRef.current) {
         if (event.payload.status === "disconnected") {
-          term.writeln("\r\n\x1b[38;2;239;68;68m连接已断开\x1b[0m");
-          term.write("\x1b[38;2;161;161;170m>\x1b[0m ");
+          termRef.current.writeln("\r\n\x1b[38;2;239;68;68m连接已断开\x1b[0m");
+          termRef.current.write("\x1b[38;2;161;161;170m>\x1b[0m ");
         }
       }
     });
 
     return () => { unlisten.then(fn => fn()); };
-  }, [sessionId]);
+  }, [sessionId, ready]);
 
   // Handle keyboard input - send to SSH
   useEffect(() => {
+    if (!ready) return;
     const term = termRef.current;
     if (!term || !sessionId) return;
 
@@ -117,12 +129,9 @@ export function Terminal({ sessionId }: TerminalProps) {
     });
 
     return () => { disposable.dispose(); };
-  }, [sessionId]);
+  }, [sessionId, ready]);
 
-  // Search
   function doSearch(prev = false) {
-    // Search addon is created inside terminal, need to access it
-    // For now just log
     console.log("Search:", searchQuery, prev ? "prev" : "next");
   }
 

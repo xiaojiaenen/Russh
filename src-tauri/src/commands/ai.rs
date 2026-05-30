@@ -2,7 +2,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use tauri::State;
+use tauri::{State, AppHandle, Emitter};
+
+#[derive(Clone, Serialize)]
+pub struct AiStreamChunk {
+    pub content: String,
+    pub done: bool,
+}
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiConfig {
@@ -190,4 +196,56 @@ pub async fn ai_chat(
     };
 
     Ok(response)
+}
+
+#[tauri::command]
+pub async fn ai_chat_stream(
+    state: State<'_, AiState>,
+    app: AppHandle,
+    messages: Vec<AiMessage>,
+) -> Result<(), String> {
+    let configs = state.configs.lock().await;
+    let active_id = state.active_config_id.lock().await;
+
+    let config = active_id
+        .as_ref()
+        .and_then(|id| configs.get(id))
+        .or_else(|| configs.values().next());
+
+    let _config = config.ok_or("No AI configuration found")?;
+
+    let user_message = messages.iter().rev().find(|m| m.role == "user");
+    let prompt = user_message.map(|m| m.content.as_str()).unwrap_or("");
+
+    // Simulate streaming response (placeholder for real rig API streaming)
+    let full_response = format!(
+        "Based on your request: \"{}\"\n\n\
+         Here is my analysis and suggestion:\n\n\
+         The command you need depends on the specific context of your server. \
+         Here are some common approaches:\n\n\
+         1. First, check the current state\n\
+         2. Then apply the necessary changes\n\
+         3. Verify the results\n\n\
+         Would you like me to generate a specific command?",
+        prompt
+    );
+
+    // Simulate chunked streaming
+    let chunk_size = 20;
+    let chars: Vec<char> = full_response.chars().collect();
+
+    for (i, chunk) in chars.chunks(chunk_size).enumerate() {
+        let chunk_str: String = chunk.iter().collect();
+        let done = i * chunk_size >= chars.len() - chunk_size;
+
+        let _ = app.emit("ai_stream", AiStreamChunk {
+            content: chunk_str,
+            done,
+        });
+
+        // Simulate network delay
+        tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+    }
+
+    Ok(())
 }

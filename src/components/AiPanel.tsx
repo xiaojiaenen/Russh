@@ -1,5 +1,6 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 
 interface AiPanelProps {
   sessionId: string | null;
@@ -9,6 +10,12 @@ interface AiMessage {
   role: "user" | "assistant";
   content: string;
   command?: string;
+  streaming?: boolean;
+}
+
+interface AiStreamChunk {
+  content: string;
+  done: boolean;
 }
 
 export function AiPanel({ sessionId }: AiPanelProps) {
@@ -16,44 +23,77 @@ export function AiPanel({ sessionId }: AiPanelProps) {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const streamingRef = useRef(false);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
   }, [messages]);
 
-  async function handleSend() {
-    if (!input.trim() || loading) return;
+  // Listen for streaming chunks
+  useEffect(() => {
+    const unlisten = listen<AiStreamChunk>("ai_stream", (event) => {
+      const { content, done } = event.payload;
 
-    const userMessage: AiMessage = { role: "user", content: input };
-    setMessages((prev) => [...prev, userMessage]);
+      setMessages((prev) => {
+        const lastMsg = prev[prev.length - 1];
+        if (lastMsg && lastMsg.role === "assistant" && lastMsg.streaming) {
+          // Append to existing streaming message
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            ...lastMsg,
+            content: lastMsg.content + content,
+          };
+          if (done) {
+            updated[updated.length - 1].streaming = false;
+            streamingRef.current = false;
+          }
+          return updated;
+        }
+        return prev;
+      });
+    });
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
+
+  const handleSendStream = useCallback(async (message: string) => {
+    if (!message.trim() || loading) return;
+
+    const userMessage: AiMessage = { role: "user", content: message };
+    setMessages((prev) => [
+      ...prev,
+      userMessage,
+      { role: "assistant", content: "", streaming: true },
+    ]);
     setInput("");
     setLoading(true);
+    streamingRef.current = true;
 
     try {
-      const response = await invoke<{
-        content: string;
-        command: string | null;
-      }>("ai_chat", {
+      await invoke("ai_chat_stream", {
         messages: [...messages, userMessage].map((m) => ({
           role: m.role,
           content: m.content,
         })),
       });
-
-      const assistantMessage: AiMessage = {
-        role: "assistant",
-        content: response.content,
-        command: response.command ?? undefined,
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
     } catch (e) {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: `Error: ${e}` },
-      ]);
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => !m.streaming);
+        return [
+          ...filtered,
+          { role: "assistant", content: `Error: ${e}` },
+        ];
+      });
     } finally {
       setLoading(false);
+      streamingRef.current = false;
     }
+  }, [messages, loading]);
+
+  async function handleSend() {
+    await handleSendStream(input);
   }
 
   async function handleNlToCommand() {
@@ -115,7 +155,10 @@ export function AiPanel({ sessionId }: AiPanelProps) {
             <div className="text-[10px] text-fg-2 mb-1">
               {msg.role === "user" ? "You" : "AI"}
             </div>
-            <div className="text-fg-0 whitespace-pre-wrap">{msg.content}</div>
+            <div className="text-fg-0 whitespace-pre-wrap">
+              {msg.content}
+              {msg.streaming && <span className="inline-block w-1.5 h-3 bg-accent ml-0.5 animate-pulse" />}
+            </div>
             {msg.command && (
               <div className="mt-2 p-2 bg-bg-2 border border-border rounded font-mono text-fg-1">
                 {msg.command}
@@ -123,13 +166,6 @@ export function AiPanel({ sessionId }: AiPanelProps) {
             )}
           </div>
         ))}
-
-        {loading && (
-          <div className="text-xs text-fg-2">
-            <div className="text-[10px] mb-1">AI</div>
-            <div className="spinner" />
-          </div>
-        )}
 
         <div ref={messagesEndRef} />
       </div>

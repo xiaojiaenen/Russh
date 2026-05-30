@@ -1,5 +1,6 @@
 pub mod ai;
 pub mod app;
+pub mod audit;
 pub mod config;
 pub mod monitor;
 pub mod security;

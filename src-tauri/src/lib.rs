@@ -2,6 +2,7 @@ mod commands;
 mod models;
 
 use commands::ai::AiState;
+use commands::audit::AuditState;
 use commands::ssh::AppState;
 use commands::tunnel::TunnelManager;
 use tauri::{Manager, WindowEvent};
@@ -16,12 +17,14 @@ pub fn run() {
     let app_state = AppState::default();
     let tunnel_manager = TunnelManager::default();
     let ai_state = AiState::default();
+    let audit_state = AuditState::default();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(app_state)
         .manage(tunnel_manager)
         .manage(ai_state)
+        .manage(audit_state)
         .invoke_handler(tauri::generate_handler![
             commands::app::get_app_info,
             commands::app::get_platform,
@@ -60,8 +63,12 @@ pub fn run() {
             commands::ai::ai_nl_to_command,
             commands::ai::ai_analyze_error,
             commands::ai::ai_chat,
+            commands::ai::ai_chat_stream,
             commands::security::check_command_safety,
             commands::security::get_safety_rules,
+            commands::audit::audit_log_event,
+            commands::audit::audit_query_logs,
+            commands::audit::audit_verify_integrity,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::Moved(position) = event {

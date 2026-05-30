@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
+// Keyboard shortcuts:
+// F5: Refresh data
+// 1: Sort by CPU
+// 2: Sort by Memory
+
 interface MonitorPanelProps {
   sessionId: string;
 }

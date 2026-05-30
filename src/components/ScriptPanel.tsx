@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
+// Keyboard shortcuts:
+// Ctrl+N: New script
+// Ctrl+E: Edit selected script
+// Delete: Delete selected script
+// Enter: Execute selected script
+
 interface ScriptPanelProps {
   onExecute: (command: string) => void;
 }

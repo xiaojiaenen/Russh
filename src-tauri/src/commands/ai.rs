@@ -4,12 +4,6 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tauri::{State, AppHandle, Emitter};
 
-#[derive(Clone, Serialize)]
-pub struct AiStreamChunk {
-    pub content: String,
-    pub done: bool,
-}
-
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AiConfig {
     pub id: String,
@@ -58,6 +52,12 @@ pub struct AiResponse {
     pub risk_level: Option<String>,
 }
 
+#[derive(Clone, Serialize)]
+pub struct AiStreamChunk {
+    pub content: String,
+    pub done: bool,
+}
+
 pub struct AiState {
     pub configs: Arc<Mutex<HashMap<String, AiConfig>>>,
     pub active_config_id: Arc<Mutex<Option<String>>>,
@@ -70,6 +70,41 @@ impl Default for AiState {
             active_config_id: Arc::new(Mutex::new(None)),
         }
     }
+}
+
+// Helper: call OpenAI-compatible chat completion API
+async fn chat_completion(
+    config: &AiConfig,
+    messages: Vec<serde_json::Value>,
+    stream: bool,
+) -> Result<reqwest::Response, String> {
+    if config.api_key.is_empty() {
+        return Err("API key is required".to_string());
+    }
+
+    let client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(config.timeout_secs as u64))
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+
+    let body = serde_json::json!({
+        "model": config.model,
+        "messages": messages,
+        "stream": stream,
+        "temperature": config.temperature,
+        "max_tokens": config.max_tokens,
+    });
+
+    let url = format!("{}/chat/completions", config.base_url);
+
+    client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", config.api_key))
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .send()
+        .await
+        .map_err(|e| format!("HTTP request failed: {}", e))
 }
 
 #[tauri::command]
@@ -104,11 +139,28 @@ pub async fn ai_delete_config(
 pub async fn ai_test_connection(
     config: AiConfig,
 ) -> Result<String, String> {
-    // Placeholder: would make actual API call
-    if config.api_key.is_empty() {
-        return Err("API key is required".to_string());
+    let messages = vec![
+        serde_json::json!({"role": "user", "content": "Reply with just: OK"}),
+    ];
+
+    let response = chat_completion(&config, messages, false).await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let text = response.text().await.unwrap_or_default();
+        return Err(format!("API error {}: {}", status, text));
     }
-    Ok(format!("Connection to {} successful", config.base_url))
+
+    let json: serde_json::Value = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+
+    let content = json["choices"][0]["message"]["content"]
+        .as_str()
+        .unwrap_or("No response");
+
+    Ok(format!("Connection successful: {}", content))
 }
 
 #[tauri::command]
@@ -126,18 +178,38 @@ pub async fn ai_nl_to_command(
 
     let config = config.ok_or("No AI configuration found")?;
 
-    // Placeholder: would call rig/AI API
-    // For now, return a mock response
     let user_message = request.messages.iter().rev().find(|m| m.role == "user");
     let prompt = user_message.map(|m| m.content.as_str()).unwrap_or("");
 
-    let response = AiResponse {
-        content: format!("Based on your request: \"{}\"\n\nHere is the suggested command:", prompt),
-        command: Some(format!("echo \"Processing: {}\"", prompt)),
-        risk_level: Some("safe".to_string()),
-    };
+    let messages = vec![
+        serde_json::json!({"role": "system", "content": "You are a Linux/Unix command expert. Given a natural language description, generate the appropriate Shell command. Return ONLY the command, no explanation. If multiple commands are needed, separate them with &&."}),
+        serde_json::json!({"role": "user", "content": prompt}),
+    ];
 
-    Ok(response)
+    let response = chat_completion(config, messages, false).await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let text = response.text().await.unwrap_or_default();
+        return Err(format!("API error {}: {}", status, text));
+    }
+
+    let json: serde_json::Value = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+
+    let command = json["choices"][0]["message"]["content"]
+        .as_str()
+        .unwrap_or("")
+        .trim()
+        .to_string();
+
+    Ok(AiResponse {
+        content: format!("Generated command:\n{}", command),
+        command: Some(command),
+        risk_level: Some("safe".to_string()),
+    })
 }
 
 #[tauri::command]
@@ -155,19 +227,36 @@ pub async fn ai_analyze_error(
         .and_then(|id| configs.get(id))
         .or_else(|| configs.values().next());
 
-    let _config = config.ok_or("No AI configuration found")?;
+    let config = config.ok_or("No AI configuration found")?;
 
-    // Placeholder: would call AI API
-    let response = AiResponse {
-        content: format!(
-            "Error Analysis:\n\nCommand: {}\nExit Code: {}\n\nThe command failed. Here are some suggestions:",
-            command, exit_code
-        ),
+    let messages = vec![
+        serde_json::json!({"role": "system", "content": "You are a Linux/Unix system administrator expert. Analyze command errors and provide clear explanations and fix suggestions. Be concise."}),
+        serde_json::json!({"role": "user", "content": format!("Command: {}\nExit Code: {}\nStderr:\n{}\n\nExplain the error and suggest a fix.", command, exit_code, stderr)}),
+    ];
+
+    let response = chat_completion(config, messages, false).await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let text = response.text().await.unwrap_or_default();
+        return Err(format!("API error {}: {}", status, text));
+    }
+
+    let json: serde_json::Value = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+
+    let content = json["choices"][0]["message"]["content"]
+        .as_str()
+        .unwrap_or("No analysis available")
+        .to_string();
+
+    Ok(AiResponse {
+        content,
         command: None,
         risk_level: None,
-    };
-
-    Ok(response)
+    })
 }
 
 #[tauri::command]
@@ -183,19 +272,39 @@ pub async fn ai_chat(
         .and_then(|id| configs.get(id))
         .or_else(|| configs.values().next());
 
-    let _config = config.ok_or("No AI configuration found")?;
+    let config = config.ok_or("No AI configuration found")?;
 
-    // Placeholder: would call AI API
     let user_message = messages.iter().rev().find(|m| m.role == "user");
     let prompt = user_message.map(|m| m.content.as_str()).unwrap_or("");
 
-    let response = AiResponse {
-        content: format!("I understand you're asking about: \"{}\"\n\nLet me help you with that.", prompt),
+    let api_messages = vec![
+        serde_json::json!({"role": "system", "content": "You are a helpful AI assistant for server administration and DevOps tasks. Help users with SSH, Linux commands, system monitoring, and troubleshooting."}),
+        serde_json::json!({"role": "user", "content": prompt}),
+    ];
+
+    let response = chat_completion(config, api_messages, false).await?;
+
+    if !response.status().is_success() {
+        let status = response.status();
+        let text = response.text().await.unwrap_or_default();
+        return Err(format!("API error {}: {}", status, text));
+    }
+
+    let json: serde_json::Value = response
+        .json()
+        .await
+        .map_err(|e| format!("Failed to parse response: {}", e))?;
+
+    let content = json["choices"][0]["message"]["content"]
+        .as_str()
+        .unwrap_or("No response")
+        .to_string();
+
+    Ok(AiResponse {
+        content,
         command: None,
         risk_level: None,
-    };
-
-    Ok(response)
+    })
 }
 
 #[tauri::command]
@@ -212,40 +321,67 @@ pub async fn ai_chat_stream(
         .and_then(|id| configs.get(id))
         .or_else(|| configs.values().next());
 
-    let _config = config.ok_or("No AI configuration found")?;
+    let config = config.ok_or("No AI configuration found")?;
 
-    let user_message = messages.iter().rev().find(|m| m.role == "user");
-    let prompt = user_message.map(|m| m.content.as_str()).unwrap_or("");
+    let api_messages: Vec<serde_json::Value> = messages
+        .iter()
+        .map(|m| {
+            serde_json::json!({
+                "role": m.role,
+                "content": m.content,
+            })
+        })
+        .collect();
 
-    // Simulate streaming response (placeholder for real rig API streaming)
-    let full_response = format!(
-        "Based on your request: \"{}\"\n\n\
-         Here is my analysis and suggestion:\n\n\
-         The command you need depends on the specific context of your server. \
-         Here are some common approaches:\n\n\
-         1. First, check the current state\n\
-         2. Then apply the necessary changes\n\
-         3. Verify the results\n\n\
-         Would you like me to generate a specific command?",
-        prompt
-    );
+    let response = chat_completion(config, api_messages, true).await?;
 
-    // Simulate chunked streaming
-    let chunk_size = 20;
-    let chars: Vec<char> = full_response.chars().collect();
-
-    for (i, chunk) in chars.chunks(chunk_size).enumerate() {
-        let chunk_str: String = chunk.iter().collect();
-        let done = i * chunk_size >= chars.len() - chunk_size;
-
-        let _ = app.emit("ai_stream", AiStreamChunk {
-            content: chunk_str,
-            done,
-        });
-
-        // Simulate network delay
-        tokio::time::sleep(tokio::time::Duration::from_millis(50)).await;
+    if !response.status().is_success() {
+        let status = response.status();
+        let text = response.text().await.unwrap_or_default();
+        return Err(format!("API error {}: {}", status, text));
     }
+
+    // Process SSE stream
+    let mut buffer = String::new();
+    let mut stream = response.bytes_stream();
+
+    use futures_util::StreamExt;
+
+    while let Some(chunk) = stream.next().await {
+        let chunk = chunk.map_err(|e| format!("Stream error: {}", e))?;
+        let text = String::from_utf8_lossy(&chunk);
+        buffer.push_str(&text);
+
+        while let Some(newline_pos) = buffer.find('\n') {
+            let line = buffer[..newline_pos].trim().to_string();
+            buffer = buffer[newline_pos + 1..].to_string();
+
+            if line.starts_with("data: ") {
+                let data = &line[6..];
+                if data == "[DONE]" {
+                    let _ = app.emit("ai_stream", AiStreamChunk {
+                        content: String::new(),
+                        done: true,
+                    });
+                    return Ok(());
+                }
+
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(data) {
+                    if let Some(delta) = json["choices"][0]["delta"]["content"].as_str() {
+                        let _ = app.emit("ai_stream", AiStreamChunk {
+                            content: delta.to_string(),
+                            done: false,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    let _ = app.emit("ai_stream", AiStreamChunk {
+        content: String::new(),
+        done: true,
+    });
 
     Ok(())
 }

@@ -2,6 +2,11 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 
+// Keyboard shortcuts:
+// Enter: Send message
+// Shift+Enter: New line
+// /ai: Convert natural language to command
+
 interface AiPanelProps {
   sessionId: string | null;
 }

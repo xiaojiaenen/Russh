@@ -7,11 +7,12 @@ interface SidebarProps {
   onConnect: (config: ConnectionConfig) => void;
   onOpenSftp: (config: ConnectionConfig) => void;
   onOpenMonitor: (config: ConnectionConfig) => void;
+  onOpenTunnel: (config: ConnectionConfig) => void;
   onSave: (config: ConnectionConfig) => void;
   onDelete: (configId: string) => void;
 }
 
-export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onSave, onDelete }: SidebarProps) {
+export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onOpenTunnel, onSave, onDelete }: SidebarProps) {
   const [search, setSearch] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [editingConfig, setEditingConfig] = useState<ConnectionConfig | null>(null);
@@ -111,6 +112,16 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onS
                     title="Open Monitor"
                   >
                     M
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onOpenTunnel(config);
+                    }}
+                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-[10px]"
+                    title="Open Tunnel"
+                  >
+                    T
                   </button>
                   <button
                     onClick={(e) => {

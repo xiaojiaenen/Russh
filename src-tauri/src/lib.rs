@@ -2,6 +2,7 @@ mod commands;
 mod models;
 
 use commands::ssh::AppState;
+use commands::tunnel::TunnelManager;
 use tauri::{Manager, WindowEvent};
 use tauri_plugin_store::StoreExt;
 
@@ -12,10 +13,12 @@ pub fn run() {
         .init();
 
     let app_state = AppState::default();
+    let tunnel_manager = TunnelManager::default();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_store::Builder::default().build())
         .manage(app_state)
+        .manage(tunnel_manager)
         .invoke_handler(tauri::generate_handler![
             commands::app::get_app_info,
             commands::app::get_platform,
@@ -42,6 +45,11 @@ pub fn run() {
             commands::monitor::get_network_usage,
             commands::monitor::get_process_list,
             commands::monitor::kill_process,
+            commands::tunnel::tunnel_create_local,
+            commands::tunnel::tunnel_create_remote,
+            commands::tunnel::tunnel_create_dynamic,
+            commands::tunnel::tunnel_close,
+            commands::tunnel::tunnel_list,
         ])
         .on_window_event(|window, event| {
             if let WindowEvent::Moved(position) = event {

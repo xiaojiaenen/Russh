@@ -4,6 +4,7 @@ import { Sidebar } from "./components/Sidebar";
 import { Terminal } from "./components/Terminal";
 import { SftpPanel } from "./components/SftpPanel";
 import { MonitorPanel } from "./components/MonitorPanel";
+import { TunnelPanel } from "./components/TunnelPanel";
 import { useConnectionStore } from "./stores/connection-store";
 import { ConnectionConfig } from "./types/connection";
 
@@ -17,7 +18,7 @@ interface Tab {
   id: string;
   title: string;
   sessionId: string | null;
-  type: "terminal" | "sftp" | "monitor";
+  type: "terminal" | "sftp" | "monitor" | "tunnel";
 }
 
 function App() {
@@ -85,6 +86,22 @@ function App() {
     }
   }, []);
 
+  const handleOpenTunnel = useCallback(async (config: ConnectionConfig) => {
+    try {
+      const sessionId = await invoke<string>("connect", { config });
+      const newTab: Tab = {
+        id: crypto.randomUUID(),
+        title: `Tunnel - ${config.name || config.host}`,
+        sessionId,
+        type: "tunnel",
+      };
+      setTabs((prev) => [...prev, newTab]);
+      setActiveTabId(newTab.id);
+    } catch (e) {
+      console.error("Connection failed:", e);
+    }
+  }, []);
+
   const handleCloseTab = useCallback(
     (tabId: string) => {
       setTabs((prev) => {
@@ -126,6 +143,7 @@ function App() {
         onConnect={handleConnect}
         onOpenSftp={handleOpenSftp}
         onOpenMonitor={handleOpenMonitor}
+        onOpenTunnel={handleOpenTunnel}
         onSave={saveConnection}
         onDelete={deleteConnection}
       />
@@ -173,6 +191,8 @@ function App() {
               <SftpPanel sessionId={activeTab.sessionId} />
             ) : activeTab.type === "monitor" ? (
               <MonitorPanel sessionId={activeTab.sessionId} />
+            ) : activeTab.type === "tunnel" ? (
+              <TunnelPanel sessionId={activeTab.sessionId} />
             ) : (
               <Terminal sessionId={activeTab.sessionId} />
             )

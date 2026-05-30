@@ -136,16 +136,16 @@ export function AiPanel({ sessionId }: AiPanelProps) {
     <div className="h-full flex flex-col bg-bg-0 border-l border-border w-80">
       {/* Header */}
       <div className="h-10 border-b border-border flex items-center px-3">
-        <span className="text-xs font-semibold text-fg-0">AI Assistant</span>
+        <span className="text-xs font-semibold text-fg-0">AI 助手</span>
       </div>
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto scroll p-3 space-y-3">
         {messages.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-xs text-fg-2">Ask anything about your server</p>
+            <p className="text-xs text-fg-2">询问任何关于服务器的问题</p>
             <p className="text-[10px] text-fg-2 mt-1">
-              Use /ai to convert natural language to commands
+              使用 /ai 将自然语言转换为命令
             </p>
           </div>
         )}
@@ -183,14 +183,14 @@ export function AiPanel({ sessionId }: AiPanelProps) {
                 handleSend();
               }
             }}
-            placeholder="Ask a question..."
+            placeholder="输入问题..."
             className="flex-1 h-8 px-2 bg-bg-1 border border-border rounded text-xs text-fg-0 placeholder:text-fg-2 focus:outline-none focus:border-accent"
           />
           <button
             onClick={handleNlToCommand}
             disabled={!input.trim() || loading}
             className="h-8 px-2 text-[10px] text-fg-2 border border-border rounded hover:bg-bg-3 disabled:opacity-50"
-            title="Convert to command"
+            title="转换为命令"
           >
             /ai
           </button>

@@ -213,13 +213,13 @@ function App() {
             onClick={handleOpenBatch}
             className="h-8 px-2 text-[10px] text-fg-2 hover:text-fg-0 hover:bg-bg-3 rounded"
           >
-            Batch
+            批量
           </button>
           <button
             onClick={handleOpenScripts}
             className="h-8 px-2 text-[10px] text-fg-2 hover:text-fg-0 hover:bg-bg-3 rounded"
           >
-            Scripts
+            脚本
           </button>
           <button
             onClick={() => setShowAi(!showAi)}
@@ -259,7 +259,7 @@ function App() {
 
         {/* Status bar */}
         <div className="h-7 bg-bg-0 border-t border-border flex items-center px-3 text-xs text-fg-2">
-          <span>{activeTab?.sessionId ? "Connected" : "Not connected"}</span>
+          <span>{activeTab?.sessionId ? "已连接" : "未连接"}</span>
           <span className="ml-auto">{appInfo?.platform || "unknown"}</span>
         </div>
       </main>
@@ -274,13 +274,13 @@ function WelcomeScreen({ appInfo }: { appInfo: AppInfo | null }) {
         <h1 className="text-2xl font-semibold text-fg-0 mb-2">
           {appInfo?.name || "Russh"}
         </h1>
-        <p className="text-sm text-fg-1 mb-1">AI-native SSH client</p>
+        <p className="text-sm text-fg-1 mb-1">AI 原生 SSH 客户端</p>
         <p className="text-xs text-fg-2 mb-6">
           v{appInfo?.version || "0.1.0"} | {appInfo?.platform || "unknown"}
         </p>
         <div className="space-y-2 text-xs text-fg-2">
-          <p>Click a connection in the sidebar to get started</p>
-          <p>Or press <kbd className="px-1.5 py-0.5 bg-bg-3 rounded text-fg-1">+</kbd> to add a new connection</p>
+          <p>在左侧栏选择一个连接开始使用</p>
+          <p>或点击 <kbd className="px-1.5 py-0.5 bg-bg-3 rounded text-fg-1">+</kbd> 添加新连接</p>
         </div>
       </div>
     </div>

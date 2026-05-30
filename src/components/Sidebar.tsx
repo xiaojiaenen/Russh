@@ -62,7 +62,7 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
         </div>
         <input
           type="text"
-          placeholder="Search connections..."
+          placeholder="搜索连接..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           className="w-full h-7 px-2 bg-bg-2 border border-border rounded text-xs text-fg-0 placeholder:text-fg-2 focus:outline-none focus:border-accent"
@@ -149,12 +149,12 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
 
         {connections.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-xs text-fg-2">No connections yet</p>
+            <p className="text-xs text-fg-2">暂无连接</p>
             <button
               onClick={handleNewConnection}
               className="mt-2 text-xs text-accent hover:underline"
             >
-              Add your first connection
+              添加第一个连接
             </button>
           </div>
         )}

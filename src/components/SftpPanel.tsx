@@ -81,7 +81,7 @@ export function SftpPanel({ sessionId }: SftpPanelProps) {
   }
 
   function handleMkdir() {
-    const name = prompt("Directory name:");
+    const name = prompt("文件夹名称:");
     if (name) {
       invoke("sftp_mkdir", {
         sessionId,
@@ -106,26 +106,26 @@ export function SftpPanel({ sessionId }: SftpPanelProps) {
           disabled={remotePath === "/"}
           className="h-6 px-2 text-xs text-fg-2 border border-border rounded hover:bg-bg-3 disabled:opacity-50"
         >
-          Back
+          返回
         </button>
         <button
           onClick={() => loadFiles(remotePath)}
           className="h-6 px-2 text-xs text-fg-2 border border-border rounded hover:bg-bg-3"
         >
-          Refresh
+          刷新
         </button>
         <button
           onClick={handleMkdir}
           className="h-6 px-2 text-xs text-fg-2 border border-border rounded hover:bg-bg-3"
         >
-          New Folder
+          新建文件夹
         </button>
         {selected.size > 0 && (
           <button
             onClick={handleDelete}
             className="h-6 px-2 text-xs text-error border border-error/30 rounded hover:bg-error/10"
           >
-            Delete ({selected.size})
+            删除 ({selected.size})
           </button>
         )}
         <div className="flex-1" />
@@ -166,10 +166,10 @@ export function SftpPanel({ sessionId }: SftpPanelProps) {
           <table className="w-full text-xs">
             <thead>
               <tr className="text-fg-2 border-b border-border">
-                <th className="text-left px-3 py-2 font-normal">Name</th>
-                <th className="text-right px-3 py-2 font-normal w-24">Size</th>
-                <th className="text-right px-3 py-2 font-normal w-32">Modified</th>
-                <th className="text-right px-3 py-2 font-normal w-24">Permissions</th>
+                <th className="text-left px-3 py-2 font-normal">名称</th>
+                <th className="text-right px-3 py-2 font-normal w-24">大小</th>
+                <th className="text-right px-3 py-2 font-normal w-32">修改时间</th>
+                <th className="text-right px-3 py-2 font-normal w-24">权限</th>
               </tr>
             </thead>
             <tbody>

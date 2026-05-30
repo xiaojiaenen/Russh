@@ -65,7 +65,7 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border">
           <h2 className="text-sm font-semibold text-fg-0">
-            {config.name ? "Edit Connection" : "New Connection"}
+            {config.name ? "编辑连接" : "新建连接"}
           </h2>
           <button
             onClick={onCancel}
@@ -79,12 +79,12 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
         <form onSubmit={handleSubmit} className="p-4 space-y-4 overflow-y-auto max-h-[60vh]">
           {/* Name */}
           <div>
-            <label className="block text-xs text-fg-1 mb-1">Connection Name</label>
+            <label className="block text-xs text-fg-1 mb-1">连接名称</label>
             <input
               type="text"
               value={form.name}
               onChange={(e) => updateField("name", e.target.value)}
-              placeholder="My Server"
+              placeholder="我的服务器"
               className="w-full h-8 px-2 bg-bg-1 border border-border rounded text-xs text-fg-0 placeholder:text-fg-2 focus:outline-none focus:border-accent"
             />
           </div>
@@ -92,7 +92,7 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
           {/* Host and Port */}
           <div className="flex gap-3">
             <div className="flex-1">
-              <label className="block text-xs text-fg-1 mb-1">Host</label>
+              <label className="block text-xs text-fg-1 mb-1">主机地址</label>
               <input
                 type="text"
                 value={form.host}
@@ -102,7 +102,7 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
               />
             </div>
             <div className="w-20">
-              <label className="block text-xs text-fg-1 mb-1">Port</label>
+              <label className="block text-xs text-fg-1 mb-1">端口</label>
               <input
                 type="number"
                 value={form.port}
@@ -114,7 +114,7 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
 
           {/* Username */}
           <div>
-            <label className="block text-xs text-fg-1 mb-1">Username</label>
+            <label className="block text-xs text-fg-1 mb-1">用户名</label>
             <input
               type="text"
               value={form.username}
@@ -126,7 +126,7 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
 
           {/* Auth method */}
           <div>
-            <label className="block text-xs text-fg-1 mb-1">Authentication</label>
+            <label className="block text-xs text-fg-1 mb-1">认证方式</label>
             <div className="flex gap-2">
               <button
                 type="button"
@@ -137,7 +137,7 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
                     : "border-border text-fg-2 hover:text-fg-0"
                 }`}
               >
-                Password
+                密码
               </button>
               <button
                 type="button"
@@ -148,7 +148,7 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
                     : "border-border text-fg-2 hover:text-fg-0"
                 }`}
               >
-                Key File
+                密钥文件
               </button>
             </div>
           </div>
@@ -156,7 +156,7 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
           {/* Auth details */}
           {isPasswordAuth && (
             <div>
-              <label className="block text-xs text-fg-1 mb-1">Password</label>
+              <label className="block text-xs text-fg-1 mb-1">密码</label>
               <input
                 type="password"
                 value={(form.auth as { Password: { password: string } }).Password.password}
@@ -168,7 +168,7 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
 
           {isKeyAuth && (
             <div>
-              <label className="block text-xs text-fg-1 mb-1">Key File Path</label>
+              <label className="block text-xs text-fg-1 mb-1">密钥文件路径</label>
               <input
                 type="text"
                 value={(form.auth as { KeyFile: { key_path: string; passphrase: string | null } }).KeyFile.key_path}
@@ -181,7 +181,7 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
 
           {/* Group */}
           <div>
-            <label className="block text-xs text-fg-1 mb-1">Group</label>
+            <label className="block text-xs text-fg-1 mb-1">分组</label>
             <input
               type="text"
               value={form.group}
@@ -193,11 +193,11 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
 
           {/* Notes */}
           <div>
-            <label className="block text-xs text-fg-1 mb-1">Notes</label>
+            <label className="block text-xs text-fg-1 mb-1">备注</label>
             <textarea
               value={form.notes}
               onChange={(e) => updateField("notes", e.target.value)}
-              placeholder="Optional notes..."
+              placeholder="可选备注..."
               rows={2}
               className="w-full px-2 py-1.5 bg-bg-1 border border-border rounded text-xs text-fg-0 placeholder:text-fg-2 focus:outline-none focus:border-accent resize-none"
             />
@@ -225,20 +225,20 @@ export function ConnectionDialog({ config, onSave, onCancel }: ConnectionDialogP
             disabled={testing || !form.host}
             className="px-3 py-1.5 text-xs text-fg-2 border border-border rounded hover:bg-bg-3 disabled:opacity-50"
           >
-            {testing ? "Testing..." : "Test Connection"}
+            {testing ? "测试中..." : "测试连接"}
           </button>
           <div className="flex gap-2">
             <button
               onClick={onCancel}
               className="px-3 py-1.5 text-xs text-fg-2 border border-border rounded hover:bg-bg-3"
             >
-              Cancel
+              取消
             </button>
             <button
               onClick={handleSubmit}
               className="px-3 py-1.5 text-xs text-bg-0 bg-accent rounded hover:opacity-90"
             >
-              Save
+              保存
             </button>
           </div>
         </div>

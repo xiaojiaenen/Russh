@@ -90,13 +90,13 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
     <div className="h-full flex flex-col bg-bg-1">
       {/* Header */}
       <div className="h-10 border-b border-border flex items-center px-3 gap-2">
-        <span className="text-xs text-fg-1">Port Forwarding</span>
+        <span className="text-xs text-fg-1">端口转发</span>
         <div className="flex-1" />
         <button
           onClick={() => setShowCreate(true)}
           className="h-6 px-2 text-xs text-bg-0 bg-accent rounded hover:opacity-90"
         >
-          New Tunnel
+          新建隧道
         </button>
       </div>
 
@@ -105,12 +105,12 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
         <table className="w-full text-xs">
           <thead>
             <tr className="text-fg-2 border-b border-border">
-              <th className="text-left px-3 py-2 font-normal">Type</th>
-              <th className="text-left px-3 py-2 font-normal">Local</th>
-              <th className="text-left px-3 py-2 font-normal">Remote</th>
-              <th className="text-left px-3 py-2 font-normal">Status</th>
-              <th className="text-right px-3 py-2 font-normal">Traffic</th>
-              <th className="text-right px-3 py-2 font-normal">Action</th>
+              <th className="text-left px-3 py-2 font-normal">类型</th>
+              <th className="text-left px-3 py-2 font-normal">本地</th>
+              <th className="text-left px-3 py-2 font-normal">远程</th>
+              <th className="text-left px-3 py-2 font-normal">状态</th>
+              <th className="text-right px-3 py-2 font-normal">流量</th>
+              <th className="text-right px-3 py-2 font-normal">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -140,7 +140,7 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
                     onClick={() => handleClose(tunnel.id)}
                     className="text-[10px] text-fg-2 hover:text-error"
                   >
-                    Stop
+                    停止
                   </button>
                 </td>
               </tr>
@@ -148,7 +148,7 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
             {tunnels.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-8 text-center text-fg-2">
-                  No tunnels configured
+                  暂无隧道配置
                 </td>
               </tr>
             )}
@@ -160,12 +160,12 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
       {showCreate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-bg-2 border border-border rounded-lg w-[400px] p-4">
-            <h3 className="text-sm font-semibold text-fg-0 mb-4">New Tunnel</h3>
+            <h3 className="text-sm font-semibold text-fg-0 mb-4">新建隧道</h3>
 
             <div className="space-y-3">
               {/* Type */}
               <div>
-                <label className="block text-xs text-fg-1 mb-1">Type</label>
+                <label className="block text-xs text-fg-1 mb-1">类型</label>
                 <div className="flex gap-2">
                   {(["local", "remote", "dynamic"] as const).map((type) => (
                     <button
@@ -177,7 +177,7 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
                           : "border-border text-fg-2 hover:text-fg-0"
                       }`}
                     >
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                      {type === "local" ? "本地" : type === "remote" ? "远程" : "动态"}
                     </button>
                   ))}
                 </div>
@@ -185,7 +185,7 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
 
               {/* Local port */}
               <div>
-                <label className="block text-xs text-fg-1 mb-1">Local Port</label>
+                <label className="block text-xs text-fg-1 mb-1">本地端口</label>
                 <input
                   type="number"
                   value={localPort}
@@ -198,7 +198,7 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
               {tunnelType !== "dynamic" && (
                 <div className="flex gap-3">
                   <div className="flex-1">
-                    <label className="block text-xs text-fg-1 mb-1">Remote Host</label>
+                    <label className="block text-xs text-fg-1 mb-1">远程主机</label>
                     <input
                       type="text"
                       value={remoteHost}
@@ -207,7 +207,7 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
                     />
                   </div>
                   <div className="w-24">
-                    <label className="block text-xs text-fg-1 mb-1">Remote Port</label>
+                    <label className="block text-xs text-fg-1 mb-1">远程端口</label>
                     <input
                       type="number"
                       value={remotePort}
@@ -224,13 +224,13 @@ export function TunnelPanel({ sessionId }: TunnelPanelProps) {
                 onClick={() => setShowCreate(false)}
                 className="px-3 py-1.5 text-xs text-fg-2 border border-border rounded hover:bg-bg-3"
               >
-                Cancel
+                取消
               </button>
               <button
                 onClick={handleCreate}
                 className="px-3 py-1.5 text-xs text-bg-0 bg-accent rounded hover:opacity-90"
               >
-                Create
+                创建
               </button>
             </div>
           </div>

@@ -94,7 +94,7 @@ export function MonitorPanel({ sessionId }: MonitorPanelProps) {
 
   return (
     <div className="h-full overflow-y-auto scroll bg-bg-1 p-4">
-      <h2 className="text-sm font-semibold text-fg-0 mb-4">System Monitor</h2>
+      <h2 className="text-sm font-semibold text-fg-0 mb-4">系统监控</h2>
 
       <div className="grid grid-cols-2 gap-4 mb-4">
         {/* CPU */}
@@ -105,15 +105,15 @@ export function MonitorPanel({ sessionId }: MonitorPanelProps) {
           </div>
           <ProgressBar value={cpuUsage} color="var(--accent)" />
           <div className="flex gap-4 mt-2 text-[10px] text-fg-2">
-            <span>User: {cpu?.user.toFixed(1)}%</span>
-            <span>System: {cpu?.system.toFixed(1)}%</span>
+            <span>用户: {cpu?.user.toFixed(1)}%</span>
+            <span>系统: {cpu?.system.toFixed(1)}%</span>
           </div>
         </div>
 
         {/* Memory */}
         <div className="bg-bg-0 border border-border rounded-lg p-3">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-xs text-fg-1">Memory</span>
+            <span className="text-xs text-fg-1">内存</span>
             <span className="text-xs text-fg-0 font-mono">{memUsage.toFixed(1)}%</span>
           </div>
           <ProgressBar value={memUsage} color="var(--info)" />
@@ -141,7 +141,7 @@ export function MonitorPanel({ sessionId }: MonitorPanelProps) {
             <ProgressBar value={disk.use_percent} color="var(--success)" />
             <div className="flex gap-4 mt-2 text-[10px] text-fg-2">
               <span>{formatBytes(disk.used)} / {formatBytes(disk.total)}</span>
-              <span>Free: {formatBytes(disk.available)}</span>
+              <span>可用: {formatBytes(disk.available)}</span>
             </div>
           </div>
         ))}
@@ -150,7 +150,7 @@ export function MonitorPanel({ sessionId }: MonitorPanelProps) {
       {/* Processes */}
       <div className="bg-bg-0 border border-border rounded-lg">
         <div className="flex items-center justify-between px-3 py-2 border-b border-border">
-          <span className="text-xs text-fg-1">Processes</span>
+          <span className="text-xs text-fg-1">进程列表</span>
           <div className="flex gap-2">
             <button
               onClick={() => setSortField("cpu")}

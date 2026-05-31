@@ -12,10 +12,17 @@ interface SidebarProps {
   onDelete: (configId: string) => void;
 }
 
+interface ContextMenu {
+  x: number;
+  y: number;
+  config: ConnectionConfig;
+}
+
 export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onOpenTunnel, onSave, onDelete }: SidebarProps) {
   const [search, setSearch] = useState("");
   const [showDialog, setShowDialog] = useState(false);
   const [editingConfig, setEditingConfig] = useState<ConnectionConfig | null>(null);
+  const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
 
   function handleNewConnection() {
     setEditingConfig(createDefaultConnection());
@@ -25,12 +32,23 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
   function handleEdit(config: ConnectionConfig) {
     setEditingConfig({ ...config });
     setShowDialog(true);
+    setContextMenu(null);
   }
 
   function handleSave(config: ConnectionConfig) {
     onSave(config);
     setShowDialog(false);
     setEditingConfig(null);
+  }
+
+  function handleContextMenu(e: React.MouseEvent, config: ConnectionConfig) {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY, config });
+  }
+
+  function closeContextMenu() {
+    setContextMenu(null);
   }
 
   const filtered = connections.filter(
@@ -48,14 +66,15 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
   }, {});
 
   return (
-    <aside className="w-60 bg-bg-0 border-r border-border flex flex-col">
+    <aside className="h-full bg-bg-0 border-r border-border flex flex-col">
       {/* Header */}
       <div className="p-3 border-b border-border">
         <div className="flex items-center justify-between mb-2">
-          <h1 className="text-sm font-semibold text-fg-0">Russh</h1>
+          <h1 className="text-base font-semibold text-fg-0">Russh</h1>
           <button
             onClick={handleNewConnection}
-            className="w-6 h-6 flex items-center justify-center text-fg-2 hover:text-fg-0 hover:bg-bg-3 rounded text-xs"
+            className="w-6 h-6 flex items-center justify-center text-fg-2 hover:text-fg-0 hover:bg-bg-3 rounded text-sm"
+            title="新建连接"
           >
             +
           </button>
@@ -65,7 +84,7 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
           placeholder="搜索连接..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full h-7 px-2 bg-bg-2 border border-border rounded text-xs text-fg-0 placeholder:text-fg-2 focus:outline-none focus:border-accent"
+          className="w-full h-8 px-2 bg-bg-2 border border-border rounded text-sm text-fg-0 placeholder:text-fg-2 focus:outline-none focus:border-accent"
         />
       </div>
 
@@ -74,17 +93,17 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
         {Object.entries(groups).map(([group, items]) => (
           <div key={group} className="mb-3">
             <div className="flex items-center px-2 py-1 text-xs text-fg-2">
-              <span className="mr-1 text-2xs">&#9662;</span>
+              <span className="mr-1">&#9662;</span>
               {group}
             </div>
             {items.map((config) => (
               <div
                 key={config.id}
-                className="group flex items-center px-2 py-1.5 rounded hover:bg-bg-3 cursor-pointer"
+                className="flex items-center px-2 py-1.5 rounded hover:bg-bg-3 cursor-pointer"
                 onClick={() => onConnect(config)}
-                title={`${config.name || config.host}\n${config.username}@${config.host}:${config.port}`}
+                onContextMenu={(e) => handleContextMenu(e, config)}
               >
-                <div className="w-2 h-2 rounded-full bg-success mr-2 flex-shrink-0" title="在线" />
+                <div className="w-2 h-2 rounded-full bg-success mr-2 flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="text-sm text-fg-0 truncate">
                     {config.name || config.host}
@@ -93,58 +112,6 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
                     {config.username}@{config.host}:{config.port}
                   </div>
                 </div>
-                <div className="hidden group-hover:flex items-center gap-1 ml-1">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenSftp(config);
-                    }}
-                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
-                    title="SFTP 文件管理"
-                  >
-                    /
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenMonitor(config);
-                    }}
-                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
-                    title="系统监控"
-                  >
-                    #
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenTunnel(config);
-                    }}
-                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
-                    title="端口转发"
-                  >
-                    ~
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEdit(config);
-                    }}
-                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-fg-0 rounded text-2xs"
-                    title="编辑连接"
-                  >
-                    E
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onDelete(config.id);
-                    }}
-                    className="w-5 h-5 flex items-center justify-center text-fg-2 hover:text-error rounded text-2xs"
-                    title="删除连接"
-                  >
-                    X
-                  </button>
-                </div>
               </div>
             ))}
           </div>
@@ -152,16 +119,65 @@ export function Sidebar({ connections, onConnect, onOpenSftp, onOpenMonitor, onO
 
         {connections.length === 0 && (
           <div className="text-center py-8">
-            <p className="text-xs text-fg-2">暂无连接</p>
+            <p className="text-sm text-fg-2">暂无连接</p>
             <button
               onClick={handleNewConnection}
-              className="mt-2 text-xs text-accent hover:underline"
+              className="mt-2 text-sm text-accent hover:underline"
             >
               添加第一个连接
             </button>
           </div>
         )}
       </div>
+
+      {/* Context menu */}
+      {contextMenu && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={closeContextMenu} />
+          <div
+            className="fixed z-50 bg-bg-2 border border-border rounded-lg shadow-lg py-1 min-w-[160px]"
+            style={{ left: contextMenu.x, top: contextMenu.y }}
+          >
+            <button
+              onClick={() => { onConnect(contextMenu.config); closeContextMenu(); }}
+              className="w-full px-3 py-1.5 text-left text-sm text-fg-0 hover:bg-bg-3"
+            >
+              连接
+            </button>
+            <button
+              onClick={() => { onOpenSftp(contextMenu.config); closeContextMenu(); }}
+              className="w-full px-3 py-1.5 text-left text-sm text-fg-0 hover:bg-bg-3"
+            >
+              SFTP 文件管理
+            </button>
+            <button
+              onClick={() => { onOpenMonitor(contextMenu.config); closeContextMenu(); }}
+              className="w-full px-3 py-1.5 text-left text-sm text-fg-0 hover:bg-bg-3"
+            >
+              系统监控
+            </button>
+            <button
+              onClick={() => { onOpenTunnel(contextMenu.config); closeContextMenu(); }}
+              className="w-full px-3 py-1.5 text-left text-sm text-fg-0 hover:bg-bg-3"
+            >
+              端口转发
+            </button>
+            <div className="border-t border-border my-1" />
+            <button
+              onClick={() => handleEdit(contextMenu.config)}
+              className="w-full px-3 py-1.5 text-left text-sm text-fg-0 hover:bg-bg-3"
+            >
+              编辑
+            </button>
+            <button
+              onClick={() => { onDelete(contextMenu.config.id); closeContextMenu(); }}
+              className="w-full px-3 py-1.5 text-left text-sm text-error hover:bg-bg-3"
+            >
+              删除
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Connection dialog */}
       {showDialog && editingConfig && (

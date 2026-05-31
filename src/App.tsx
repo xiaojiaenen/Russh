@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Sidebar } from "./components/Sidebar";
-import { Terminal } from "./components/Terminal";
-import { SftpPanel } from "./components/SftpPanel";
+import { TerminalWithSftp } from "./components/TerminalWithSftp";
 import { MonitorPanel } from "./components/MonitorPanel";
 import { TunnelPanel } from "./components/TunnelPanel";
 import { AiPanel } from "./components/AiPanel";
@@ -329,14 +328,12 @@ function App() {
         <div className="flex-1 overflow-hidden flex">
           <div className="flex-1 overflow-hidden">
             {activeTab?.sessionId ? (
-              activeTab.type === "sftp" ? (
-                <SftpPanel sessionId={activeTab.sessionId} />
-              ) : activeTab.type === "monitor" ? (
+              activeTab.type === "monitor" ? (
                 <MonitorPanel sessionId={activeTab.sessionId} />
               ) : activeTab.type === "tunnel" ? (
                 <TunnelPanel sessionId={activeTab.sessionId} />
               ) : (
-                <Terminal sessionId={activeTab.sessionId} />
+                <TerminalWithSftp sessionId={activeTab.sessionId} />
               )
             ) : activeTab?.type === "batch" ? (
               <BatchPanel connections={connections.map((c) => ({ id: c.id, name: c.name, host: c.host }))} />
